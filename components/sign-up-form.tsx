@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { register } from "@/app/auth/sign-up/actions";
 
 export function SignUpForm({
   className,
@@ -40,13 +41,17 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
-        },
-      });
+      /*       const { error } = await supabase.auth.signUp({
+              email,
+              password,
+              options: {
+                emailRedirectTo: `${window.location.origin}/protected`,
+              },
+            });
+      
+       */
+      const data = await register(email, password)
+      console.log(data);
       if (error) throw error;
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
