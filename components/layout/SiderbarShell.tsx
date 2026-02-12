@@ -68,14 +68,14 @@ const GROUPS: NavGroup[] = [
     icon: Megaphone,
     children: [],
   },
-  {
-    key: 'chat',
-    label: 'Chat IA',
-    href: '/dashboard/conversations',
-    baseHref: '/dashboard/conversations',
-    icon: MessageSquare,
-    children: [{ label: 'Conversaciones', href: '/dashboard/conversations' }],
-  },
+  // {
+  //   key: 'chat',
+  //   label: 'Chat IA',
+  //   href: '/dashboard/conversations',
+  //   baseHref: '/dashboard/conversations',
+  //   icon: MessageSquare,
+  //   children: [{ label: 'Conversaciones', href: '/dashboard/conversations' }],
+  // },
 ];
 
 export function SidebarShell({ children }: { children: React.ReactNode }) {
