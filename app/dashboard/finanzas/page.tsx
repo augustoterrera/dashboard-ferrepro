@@ -1,22 +1,31 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { headers } from 'next/headers';
 import { VentasLineChart } from "@/components/charts/VentasLineChart";
+import { getFinanzasResumen } from "@/lib/data/finanzas";
+import { InfoTip } from '@/components/info-tip';
 
-// --- Interfaces ---
-interface KPIProps {
+// --- Componente KPI con Soporte para Tooltips ---
+function KPI({
+  label,
+  value,
+  subValue,
+  tooltip
+}: {
   label: string;
   value: string;
-}
-
-// --- Componentes Atómicos ---
-function KPI({ label, value }: KPIProps) {
+  subValue?: string;
+  tooltip?: string
+}) {
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-5 shadow-lg backdrop-blur-sm transition-all hover:border-slate-600">
-      <div className="text-xs font-medium uppercase tracking-wider text-slate-400">
-        {label}
+    <div className="flex flex-col gap-1 rounded-xl border border-slate-700/50 bg-slate-800/40 p-5 shadow-sm transition-all hover:bg-slate-800/60">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          {label}
+        </span>
+        {tooltip && <InfoTip text={tooltip} />}
       </div>
-      <div className="mt-2 text-2xl font-bold text-white">
-        {value}
+      <div className="flex flex-col">
+        <span className="text-2xl font-bold text-white">{value}</span>
+        {subValue && <span className="text-xs text-slate-500">{subValue}</span>}
       </div>
     </div>
   );
@@ -24,18 +33,11 @@ function KPI({ label, value }: KPIProps) {
 
 // --- Página Principal ---
 export default async function FinanzasPage() {
-  const supabase = await createClient();
+  await headers();
 
-  // 1. Autenticación
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?next=/finanzas`);
-
-  // 2. Parámetros y Formateo
-
-  const fechaActual = new Date().toISOString().split('T')[0];
-  const fecha30DiasAntes = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const from = fecha30DiasAntes;
-  const to = fechaActual;
+  // Gestión de fechas (Últimos 30 días)
+  const to = new Date().toISOString().split('T')[0];
+  const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   const money = (n: number) =>
     new Intl.NumberFormat("es-AR", {
@@ -44,106 +46,141 @@ export default async function FinanzasPage() {
       maximumFractionDigits: 0,
     }).format(Number(n ?? 0));
 
-  // 3. Obtención de Datos
-  const { data, error } = await supabase.rpc("get_dashboard_stats", {
-    p_from: from,
-    p_to: to,
-  });
-
-  if (error) {
+  let data;
+  try {
+    data = await getFinanzasResumen({ from, to });
+  } catch (e: any) {
     return (
-      <div className="rounded-lg border border-red-900/50 bg-red-900/20 p-6">
-        <h1 className="text-lg font-bold text-red-500">Error de conexión</h1>
-        <pre className="mt-2 whitespace-pre-wrap text-sm text-red-300/80">
-          {error.message}
-        </pre>
+      <div className="m-8 rounded-xl border border-red-900/30 bg-red-900/10 p-6 text-red-500">
+        <h2 className="font-bold">Error de sincronización</h2>
+        <p className="text-sm opacity-70">{e.message}</p>
       </div>
     );
   }
 
-  if (!data) {
-    return <div className="py-10 text-center text-slate-400">No se encontraron registros para este período.</div>;
-  }
-
+  if (!data) return <div className="p-20 text-center text-slate-500 font-medium">No se hallaron registros.</div>;
   const stats = data as any;
 
   return (
-    <main className="space-y-8 p-6">
-      {/* Header */}
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Finanzas</h1>
-          <p className="text-sm text-slate-400">
-            Período de análisis: <span className="text-slate-200">{from}</span> al <span className="text-slate-200">{to}</span>
-          </p>
-        </div>
-      </header>
+    <div className="min-h-screen bg-slate-950">
+      <main className="mx-auto max-w-7xl space-y-8 p-8">
 
-      {/* Grid de KPIs */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <KPI label="Ventas" value={money(stats.kpis.total_ventas)} />
-        <KPI label="Pagos" value={money(stats.kpis.total_pagos)} />
-        <KPI label="Facturas" value={stats.kpis.cant_facturas.toString()} />
-        <KPI label="Ticket Prom." value={money(stats.kpis.ticket_promedio)} />
-        <KPI
-          label="% Cobrado"
-          value={
-            stats.kpis.total_ventas > 0
-              ? `${((stats.kpis.total_pagos / stats.kpis.total_ventas) * 100).toFixed(1)}%`
-              : "0%"
-          }
-        />
-      </section>
-
-      {/* Grid de Contenido Principal */}
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Gráfico de Ventas */}
-        <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-5 shadow-xl lg:col-span-2">
-          <h3 className="mb-6 text-sm font-medium text-slate-400">Ventas por día</h3>
-          <div className="h-75 w-full">
-            <VentasLineChart data={stats.series.ventas_por_dia} />
+        {/* HEADER UNIFICADO */}
+        <header className="flex flex-col gap-4 border-b border-slate-800 pb-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">
+              Finanzas <span className="text-purple-500 text-xl not-italic">Resumen</span>
+            </h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+              Monitor de ingresos y efectividad de cobranza
+            </p>
           </div>
-        </div>
 
-        {/* Tabla de Productos */}
-        <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-6 shadow-xl lg:h-100 flex flex-col">
-          <h3 className="mb-4 text-sm font-medium text-slate-400">Productos más vendidos</h3>
+          <div className="shrink-0 bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-2 text-right">
+            <div className="text-[9px] font-black uppercase tracking-tighter text-slate-500 mb-0.5 text-right">Período Activo</div>
+            <div className="text-xs font-mono text-slate-200">
+              {from} <span className="text-slate-600">→</span> {to}
+            </div>
+          </div>
+        </header>
 
-          <div className="flex-1 overflow-y-auto pr-2">
+        {/* KPIs GRID CON TOOLTIPS EXPLICATIVOS */}
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <KPI
+            label="Ventas Totales"
+            value={money(stats.kpis.total_ventas)}
+            tooltip="Suma total de todas las facturas y tickets emitidos en el período, independientemente de si fueron cobrados."
+          />
+          <KPI
+            label="Pagos Recibidos"
+            value={money(stats.kpis.total_pagos)}
+            tooltip="Efectivo real ingresado a caja o cuentas bancarias. Es el flujo de caja neto del período."
+          />
+          <KPI
+            label="Comprobantes"
+            value={stats.kpis.cant_facturas.toString()}
+            subValue="Docs emitidos"
+            tooltip="Cantidad total de documentos comerciales generados (Facturas A, B, C, etc)."
+          />
+          <KPI
+            label="Ticket Promedio"
+            value={money(stats.kpis.ticket_promedio)}
+            tooltip="Valor medio de cada venta realizada. Se calcula como Ventas Totales dividido la cantidad de comprobantes."
+          />
+          <KPI
+            label="Efectividad"
+            value={`${(stats.kpis.total_ventas > 0 ? (stats.kpis.total_pagos / stats.kpis.total_ventas) * 100 : 0).toFixed(1)}%`}
+            subValue="Cobranza vs Ventas"
+            tooltip="Mide qué porcentaje de lo facturado ya fue efectivamente cobrado. Un valor bajo puede indicar problemas de morosidad."
+          />
+        </section>
 
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-slate-800/90 backdrop-blur border-b border-slate-700">
+        {/* DASHBOARD CONTENT */}
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-                <tr className="border-b border-slate-700 text-slate-500">
-                  <th className="p-2 text-left font-semibold">Producto</th>
-                  <th className="p-2 text-right font-semibold">Venta</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/50 text-slate-300">
-                {(stats.top?.productos ?? []).map((p: any) => (
-                  <tr
-                    key={p.sku}
-                    className="group transition-colors hover:bg-slate-700/20"
-                    title={`${p.sku} • ${p.nombre}`}
-                  >
-                    <td className="py-3 pr-4">
-                      <div className="max-w-45 truncate font-medium text-slate-200 group-hover:text-white">
-                        {p.nombre}
+          {/* GRÁFICO (2/3) */}
+          <div className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-8 shadow-xl lg:col-span-2">
+            {/* Contenedor Flex para alinear título e icono */}
+            <div className="flex items-center gap-2 mb-6">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500">
+                Curva de ingresos
+              </h3>
+              <InfoTip text="Muestra la evolución diaria de las ventas. Los picos suelen representar días de alta demanda o promociones exitosas." />
+            </div>
+
+            <div className="h-80 w-full">
+              <VentasLineChart data={stats.series.ventas_por_dia} />
+            </div>
+          </div>
+
+          {/* LISTA DE PRODUCTOS (1/3) */}
+          <div className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-xl lg:h-110">
+            {/* Contenedor Flex para alinear título e icono */}
+            <div className="flex items-center gap-2 mb-6">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500">
+                Top Productos
+              </h3>
+              <InfoTip text="Ranking de los productos que más dinero generaron en los últimos 30 días." />
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10 bg-[#0f172a] py-2">
+                  <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-600">
+                    <th className="p-2 border-b border-slate-800">
+                      <div className="flex items-center gap-1.5">
+                        Item
                       </div>
-                      <div className="text-xs text-slate-500">
-                        {Number(p.unidades ?? 0).toLocaleString("es-AR")} unidades
+                    </th>
+                    <th className="p-2 text-right border-b border-slate-800">
+                      <div className="flex items-center justify-end gap-1.5">
+                        Recaudado
                       </div>
-                    </td>
-                    <td className="py-3 text-right font-mono text-slate-200">
-                      {money(Number(p.venta_total ?? 0))}
-                    </td>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-800/50">
+                  {(stats.top?.productos ?? []).map((p: any) => (
+                    <tr key={p.sku} className="group transition-colors hover:bg-slate-800/30" title={`${p.nombre} (${p.sku})`}>
+                      <td className="py-4 pr-4">
+                        <div className="max-w-[160px] truncate font-semibold text-slate-200 group-hover:text-white cursor-help">
+                          {p.nombre}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          {Number(p.unidades ?? 0).toLocaleString("es-AR")} un. vendidas
+                        </div>
+                      </td>
+                      <td className="py-4 text-right font-mono text-sm font-medium text-slate-300 group-hover:text-emerald-400">
+                        {money(Number(p.venta_total ?? 0))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </div>
   );
 }
