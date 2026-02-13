@@ -48,19 +48,6 @@ const GROUPS: NavGroup[] = [
     ],
   },
   {
-    key: 'operativo',
-    label: 'Operativo',
-    href: '/dashboard/operativo',
-    baseHref: '/dashboard/operativo',
-    icon: Settings,
-    children: [
-      { label: 'Resumen', href: '/dashboard/operativo' },
-      { label: 'Conversaciones', href: '/dashboard/operativo/conversaciones' },
-      { label: 'SLA', href: '/dashboard/operativo/sla' },
-      { label: 'Etiquetas', href: '/dashboard/operativo/etiquetas' },
-    ],
-  },
-  {
     key: 'marketing',
     label: 'Marketing',
     href: '/dashboard/marketing',
@@ -68,6 +55,18 @@ const GROUPS: NavGroup[] = [
     icon: Megaphone,
     children: [],
   },
+  {
+    key: 'operativo',
+    label: 'Operativo',
+    href: '/dashboard/operativo/leads',
+    baseHref: '/dashboard/operativo',
+    icon: Settings,
+    children: [
+      { label: 'Leads WhatsApp', href: '/dashboard/operativo/leads' },
+      { label: 'Clientes', href: '/dashboard/operativo/clientes' },
+    ],
+  },
+
   // {
   //   key: 'chat',
   //   label: 'Chat IA',
