@@ -2,6 +2,9 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { Calendar as CalendarIcon, ChevronRight } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 type CompareMode = "prev" | "yoy";
 
@@ -11,6 +14,49 @@ function iso(d: Date) {
 
 function clampNum(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v));
+}
+
+function parseISODate(s: string) {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+}
+
+function prettyDate(isoStr: string) {
+  const d = parseISODate(isoStr);
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(d);
+}
+
+function DateButton({ label, value, onSelect }: { label: string; value: string; onSelect: (v: string) => void }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 hover:border-slate-600 transition-all group"
+        >
+          <div className="flex flex-col items-start">
+            <span className="text-[8px] font-black uppercase tracking-wider text-slate-500 leading-none mb-0.5">{label}</span>
+            <span className="text-xs font-bold text-slate-200 tabular-nums">{prettyDate(value)}</span>
+          </div>
+          <CalendarIcon size={12} className="text-slate-600 group-hover:text-blue-500 transition-colors" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-auto p-3 bg-slate-950 border border-slate-800 text-slate-200 shadow-2xl dark">
+        <div className="custom-dark-calendar">
+          <Calendar
+            mode="single"
+            selected={parseISODate(value)}
+            onSelect={(d) => d && onSelect(iso(d))}
+            captionLayout="dropdown"
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export function ParetoFilterBar(props: {
@@ -102,6 +148,62 @@ export function ParetoFilterBar(props: {
   const umbralPct = Math.round(umbral * 100);
 
   return (
+    <>
+    <style jsx global>{`
+  .custom-dark-calendar .rdp {
+    --rdp-cell-size: 35px;
+    --rdp-accent-color: #2563eb;
+    --rdp-background-color: #3b82f6;
+    margin: 10px;
+    color: #e2e8f0 !important;
+  }
+  .custom-dark-calendar .rdp-day_selected {
+    background-color: var(--rdp-accent-color) !important;
+    color: white !important;
+  }
+  .custom-dark-calendar .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+    background-color: #1e293b !important;
+    color: white !important;
+  }
+  .custom-dark-calendar .rdp-head_cell {
+    color: #64748b !important;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .custom-dark-calendar .rdp-nav_button { color: #94a3b8 !important; }
+  .custom-dark-calendar .rdp-caption_label {
+    font-size: 0.875rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #f1f5f9 !important;
+  }
+  .custom-dark-calendar .rdp-day_button { color: #e2e8f0 !important; font-weight: 800; }
+  .custom-dark-calendar .rdp-day_outside .rdp-day_button { color: rgba(148,163,184,0.45) !important; }
+  .custom-dark-calendar .rdp-dropdown,
+  .custom-dark-calendar .rdp-dropdown_month,
+  .custom-dark-calendar .rdp-dropdown_year {
+    background: #0b1220 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(148,163,184,0.25) !important;
+    border-radius: 10px !important;
+    padding: 6px 10px !important;
+    font-weight: 800 !important;
+    font-size: 0.75rem !important;
+    outline: none !important;
+  }
+  .custom-dark-calendar .rdp-dropdown option,
+  .custom-dark-calendar .rdp-dropdown_month option,
+  .custom-dark-calendar .rdp-dropdown_year option { background: #0b1220 !important; color: #e2e8f0 !important; }
+  .custom-dark-calendar .rdp-caption select {
+    background: #0b1220 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(148,163,184,0.25) !important;
+    border-radius: 10px !important;
+    padding: 6px 10px !important;
+  }
+`}</style>
     <div className="flex flex-wrap items-center gap-4 rounded-xl border border-slate-700/50 bg-slate-900/40 p-2 pl-4 shadow-2xl backdrop-blur-md">
       {/* Quick ranges */}
       <div className="flex items-center gap-1 border-r border-slate-700/50 pr-4">
@@ -123,31 +225,9 @@ export function ParetoFilterBar(props: {
       <div className="flex flex-wrap items-center gap-4">
         {/* Dates */}
         <div className="flex items-center gap-2">
-          <div className="group relative">
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="w-34 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-200 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-            <span className="absolute -top-2 left-2 bg-slate-900 px-1 text-[9px] font-black uppercase tracking-tighter text-slate-500">
-              Desde
-            </span>
-          </div>
-
-          <span className="text-slate-600">—</span>
-
-          <div className="group relative">
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="w-34 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-200 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-            <span className="absolute -top-2 left-2 bg-slate-900 px-1 text-[9px] font-black uppercase tracking-tighter text-slate-500">
-              Hasta
-            </span>
-          </div>
+          <DateButton label="Desde" value={from} onSelect={setFrom} />
+          <ChevronRight size={14} className="text-slate-700" />
+          <DateButton label="Hasta" value={to} onSelect={setTo} />
         </div>
 
         {/* Compare */}
@@ -188,5 +268,6 @@ export function ParetoFilterBar(props: {
         </button>
       </div>
     </div>
+    </>
   );
 }

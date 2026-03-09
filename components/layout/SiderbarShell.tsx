@@ -8,8 +8,8 @@ import {
   Wallet,
   Settings,
   Megaphone,
-  MessageSquare,
   ChevronRight,
+  MessageSquare,
   LucideIcon
 } from 'lucide-react';
 import { LogoutButton } from '../logout-button';
@@ -67,14 +67,14 @@ const GROUPS: NavGroup[] = [
     ],
   },
 
-  // {
-  //   key: 'chat',
-  //   label: 'Chat IA',
-  //   href: '/dashboard/conversations',
-  //   baseHref: '/dashboard/conversations',
-  //   icon: MessageSquare,
-  //   children: [{ label: 'Conversaciones', href: '/dashboard/conversations' }],
-  // },
+  {
+    key: 'chat',
+    label: 'Chat IA',
+    href: '/dashboard/conversations',
+    baseHref: '/dashboard/conversations',
+    icon: MessageSquare,
+    children: [{ label: 'Conversaciones', href: '/dashboard/conversations' }],
+  },
 ];
 
 export function SidebarShell({ children }: { children: React.ReactNode }) {

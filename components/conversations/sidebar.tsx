@@ -1,8 +1,7 @@
 "use client";
 
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, MessageSquare } from "lucide-react";
 import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { useState } from "react";
 import { deleteConversation as deleteConversationAction, editConversation } from "@/app/dashboard/conversations/actions";
 import { EditConversationModal } from "./editConversationModal";
@@ -51,64 +50,79 @@ export function SidebarConversations() {
   };
 
   return (
-    <Card className="h-full flex flex-col bg-slate-800 text-amber-50">
-      <CardHeader className="border-b">
-        <CardTitle className="text-lg">Conversaciones</CardTitle>
-
-        <Button onClick={createNewConversation} size="sm" className="w-full mt-2">
-          <Plus className="h-4 w-4 mr-2" />
+    <div className="h-full flex flex-col bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+      {/* Header */}
+      <div className="px-4 py-4 border-b border-slate-800 shrink-0">
+        <h2 className="text-sm font-bold text-slate-300 tracking-tight uppercase mb-3">
+          Conversaciones
+        </h2>
+        <button
+          onClick={createNewConversation}
+          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all duration-200 shadow-[0_0_15px_rgba(37,99,235,0.2)] hover:shadow-[0_0_20px_rgba(37,99,235,0.4)]"
+        >
+          <Plus className="h-4 w-4" />
           Nueva Conversación
-        </Button>
-      </CardHeader>
+        </button>
+      </div>
 
-      {/* SCROLL SOLO AQUÍ */}
-      <CardContent className="flex-1 min-h-0 p-2 overflow-y-auto">
+      {/* List */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-2 custom-scrollbar">
         {conversationsLocal.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Sin conversaciones</p>
+          <div className="flex flex-col items-center justify-center h-full text-center py-8 gap-2">
+            <MessageSquare className="h-8 w-8 text-slate-700" />
+            <p className="text-xs text-slate-600 font-medium">Sin conversaciones</p>
+          </div>
         ) : (
-          <div className="space-y-1">
-            {conversationsLocal.map((conv) => (
-              <div
-                key={conv.id}
-                className={`flex items-center gap-2 p-2 rounded-md hover:bg-muted ${
-                  currentConversationId === conv.id ? "bg-muted" : ""
-                }`}
-              >
-                <button
-                  onClick={() => router.push(`/dashboard/conversations/${conv.id}`)}
-                  className="flex-1 text-left text-sm"
+          <div className="space-y-0.5">
+            {conversationsLocal.map((conv) => {
+              const isActive = currentConversationId === conv.id;
+              return (
+                <div
+                  key={conv.id}
+                  className={`group flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-150 relative ${
+                    isActive
+                      ? "bg-blue-600/10 border-l-2 border-blue-500 rounded-l-none"
+                      : "hover:bg-slate-800/60"
+                  }`}
                 >
-                  {conv.title}
-                </button>
+                  {isActive && (
+                    <div className="absolute left-0 top-1/4 h-1/2 w-0.5 bg-blue-500 rounded-r-full" />
+                  )}
+                  <button
+                    onClick={() => router.push(`/dashboard/conversations/${conv.id}`)}
+                    className={`flex-1 text-left text-xs font-medium truncate transition-colors duration-150 ${
+                      isActive ? "text-blue-400" : "text-slate-400 group-hover:text-slate-200"
+                    }`}
+                  >
+                    {conv.title}
+                  </button>
 
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    editTitleConversation(conv.id, conv.title);
-                  }}
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                >
-                  <Pencil className="h-3 w-3" />
-                </Button>
-
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteConversation(conv.id);
-                  }}
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editTitleConversation(conv.id, conv.title);
+                      }}
+                      className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-slate-700 text-slate-500 hover:text-slate-300 transition-colors"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteConversation(conv.id);
+                      }}
+                      className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-colors"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-      </CardContent>
+      </div>
 
       <EditConversationModal
         open={isEditModalOpen}
@@ -117,6 +131,6 @@ export function SidebarConversations() {
         initialTitle={editingConversationTitle}
         onSave={saveConversationTitle}
       />
-    </Card>
+    </div>
   );
 }
