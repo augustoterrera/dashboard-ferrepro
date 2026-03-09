@@ -27,7 +27,7 @@ export default function PageConversations() {
     const data = await createConversation();
     if (!data.success || !data.conversation) return toast.error("Error al crear conversación");
 
-    setConversationsLocal((prev) => [data.conversation, ...prev]);
+    setConversationsLocal((prev) => [data.conversation!, ...prev]);
 
     router.push(
       `/dashboard/conversations/${data.conversation.id}?initialMessage=${encodeURIComponent(input)}`
