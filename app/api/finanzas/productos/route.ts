@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const token = await getToken({ req });
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
 
   const from = searchParams.get("from")!;
@@ -16,10 +20,6 @@ export async function GET(req: Request) {
 
   const supabase = await createClient();
 
-  // si querés protegerlo con auth:
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const rpcName = tab === "unidades" ? "get_top_productos_unidades" : "get_facturacion_por_producto";
 
   const { data, error } = await supabase.rpc(rpcName, {
@@ -32,7 +32,11 @@ export async function GET(req: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message, details: error.details }, { status: 400 });
+    console.error("[api/finanzas/productos] rpc error:", error);
+    return NextResponse.json(
+      { error: error.message ?? error.code ?? "rpc_error", details: error.details ?? error.hint ?? null },
+      { status: 400 }
+    );
   }
 
   return NextResponse.json({ rows: data?.rows ?? [], page, limit });

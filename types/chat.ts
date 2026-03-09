@@ -1,9 +1,10 @@
-export type Part =
-  | { type: "text"; text: string }
-  | { type: "tool-result"; state: "output-available"; output: any };
-
-export type ChatMsg = {
-  id: string;
-  role: "user" | "assistant";
-  parts: Part[];
+// Formato de mensajes guardados en DB (para carga inicial)
+export type DBMessage = {
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    tool_invocations?: Array<{
+        type: string;
+        output: any;
+    }> | null;
 };

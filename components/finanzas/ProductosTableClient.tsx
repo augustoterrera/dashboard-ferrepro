@@ -59,7 +59,7 @@ export function ProductosTableClient({
 
             if (!alive) return;
             if (!res.ok) {
-                console.error(json);
+                console.error("[ProductosTableClient] fetch error", res.status, json);
                 setRows([]);
                 return;
             }

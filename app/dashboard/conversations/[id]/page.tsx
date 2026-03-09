@@ -2,14 +2,25 @@ import ChatPage from "./conversation"
 import { getMessages } from "./actions"
 import { redirect } from "next/navigation"
 
-export default async function pageConversation({ params, }: { params: { id: string } }) {
+export default async function pageConversation({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ id: string }>,
+    searchParams: Promise<{ initialMessage?: string }>,
+}) {
     const { id } = await params
-    if (!id) return redirect('/conversations');
-    const { success, messages }: { success: boolean, messages: any } = await getMessages(id);
+    const { initialMessage } = await searchParams
 
-    if (!success) return redirect('/conversations');
+    if (!id) return redirect('/dashboard/conversations');
+
+    const { messages } = await getMessages(id);
 
     return (
-        <ChatPage messages={messages ?? []} conversationId={id} />
+        <ChatPage
+            messages={messages ?? []}
+            conversationId={id}
+            initialMessage={initialMessage ?? null}
+        />
     )
 }
