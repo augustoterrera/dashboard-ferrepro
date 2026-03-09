@@ -1,6 +1,6 @@
 import NextAuth, { type NextAuthOptions, type DefaultSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 
 // Extender tipos de next-auth para incluir id en la sesión
@@ -21,18 +21,15 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const supabase = createServerClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_KEY!,
-          { cookies: { getAll: () => [], setAll: () => {} } },
-        );
+        const supabase = createClient()
 
         const { data: user, error } = await supabase
-          .from("users")
-          .select("id, email, name, password_hash")
-          .eq("email", credentials.email)
-          .single();
-
+        .from("users")
+        .select("id, email, name, password_hash")
+        .eq("email", credentials.email)
+        .single();
+        
+        console.log("Error fetching user from Supabase:", error)
         if (error || !user || !user.password_hash) return null;
 
         const valid = await bcrypt.compare(credentials.password, user.password_hash);
