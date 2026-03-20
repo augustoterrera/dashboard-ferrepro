@@ -1,13 +1,19 @@
 "use server";
 import { createClient } from "@/lib/supabase/admin";
+import bcrypt from "bcryptjs";
 
 export async function register(email: string, password: string) {
   const supabase = await createClient();
-  const { data: user } = await supabase.auth.signUp({ email, password });
-  if (user.user) {
-    const { error } = await supabase.auth.admin.updateUserById(user.user.id, {
-      app_metadata: { punto_venta: 1 },
-    });
-    console.log(error);
-  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const { data, error } = await supabase
+    .from("users")
+    .insert({ email, password_hash: passwordHash })
+    .select("id, email")
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  return data;
 }

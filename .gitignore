@@ -43,3 +43,7 @@ next-env.d.ts
 
 # DB
 db.md
+
+
+.claude/
+requests.http
