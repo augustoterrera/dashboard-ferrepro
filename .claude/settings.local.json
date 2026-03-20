@@ -6,7 +6,8 @@
       "Bash(pnpm add next-auth postgres bcryptjs)",
       "Bash(pnpm add -D @types/bcryptjs)",
       "Bash(pnpm remove @supabase/ssr @supabase/supabase-js)",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(find /c/Proyectos/dashboard-ferrepro/app/dashboard -name \"page.tsx\" -exec head -30 {} +)"
     ]
   }
 }

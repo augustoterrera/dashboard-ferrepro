@@ -43,3 +43,6 @@ next-env.d.ts
 
 # DB
 db.md
+
+
+.claude/

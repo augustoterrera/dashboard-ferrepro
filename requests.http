@@ -1,0 +1,9 @@
+### Crear usuario
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@gmail.com",
+  "password": "admin1234",
+  "name": "Usuario admin"
+}
