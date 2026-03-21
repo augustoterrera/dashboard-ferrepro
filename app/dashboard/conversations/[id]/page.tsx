@@ -1,5 +1,5 @@
 import ChatPage from "./conversation"
-import { getMessages } from "./actions"
+import { getMessages, getConversationTitle } from "./actions"
 import { redirect } from "next/navigation"
 
 export default async function pageConversation({
@@ -14,13 +14,17 @@ export default async function pageConversation({
 
     if (!id) return redirect('/dashboard/conversations');
 
-    const { messages } = await getMessages(id);
+    const [{ messages }, title] = await Promise.all([
+        getMessages(id),
+        getConversationTitle(id),
+    ]);
 
     return (
         <ChatPage
             messages={messages ?? []}
             conversationId={id}
             initialMessage={initialMessage ?? null}
+            initialTitle={title}
         />
     )
 }

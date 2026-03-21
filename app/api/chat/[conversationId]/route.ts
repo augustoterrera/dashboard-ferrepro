@@ -339,6 +339,123 @@ export async function POST(
                     return { type: "ventasHoraDia", rows: data };
                 },
             }),
+
+            getProductosKpis: tool({
+                description:
+                    "KPIs de productos: total de SKUs activos, productos nuevos, productos sin movimiento. Usar para 'cuántos productos tengo activos', 'SKUs nuevos', 'productos sin ventas', 'diversidad del catálogo'.",
+                inputSchema: zodSchema(z.object({
+                    dateFrom: z.string().describe("Fecha inicio YYYY-MM-DD"),
+                    dateTo: z.string().describe("Fecha fin YYYY-MM-DD"),
+                })),
+                execute: async ({ dateFrom, dateTo }) => {
+                    try {
+                        const { data, error } = await supabase.rpc("get_productos_kpis", {
+                            p_empresa: EMPRESA_ID,
+                            p_from: dateFrom,
+                            p_to: dateTo,
+                        });
+                        if (error) { console.error("[getProductosKpis]", error); return `Error: ${error.message}`; }
+                        if (!data) return "Sin datos para ese período.";
+                        return { type: "productosKpis", ...data };
+                    } catch { return "No se pudieron obtener los KPIs de productos."; }
+                },
+            }),
+
+            getMetaResumen: tool({
+                description:
+                    "Resumen general de campañas de Meta Ads (Facebook/Instagram): gasto total, impresiones, alcance, clicks, conversaciones iniciadas, CAC, CTR, CPC, CPM. Usar para '¿cómo van las campañas?', 'gasto en publicidad', 'resultados de Meta', 'rendimiento de ads'.",
+                inputSchema: zodSchema(z.object({
+                    dateFrom: z.string().describe("Fecha inicio YYYY-MM-DD"),
+                    dateTo: z.string().describe("Fecha fin YYYY-MM-DD"),
+                })),
+                execute: async ({ dateFrom, dateTo }) => {
+                    try {
+                        const { data, error } = await supabase.rpc("meta_home_summary_mixed", {
+                            p_from: dateFrom,
+                            p_to: dateTo,
+                            p_conv_level: "campaign",
+                        });
+                        if (error) { console.error("[getMetaResumen]", error); return `Error: ${error.message}`; }
+                        if (!data) return "Sin datos de Meta Ads para ese período.";
+                        return { type: "metaResumen", ...(data?.[0] ?? {}) };
+                    } catch { return "No se pudieron obtener los datos de Meta Ads."; }
+                },
+            }),
+
+            getMetaCampanias: tool({
+                description:
+                    "Ranking y recomendaciones de campañas de Meta Ads: qué campañas escalar, mantener, revisar o pausar. Usar para '¿qué campañas están funcionando bien?', 'recomendaciones de campañas', 'qué pausar en Meta', 'optimización de campañas'.",
+                inputSchema: zodSchema(z.object({
+                    dateFrom: z.string().describe("Fecha inicio YYYY-MM-DD"),
+                    dateTo: z.string().describe("Fecha fin YYYY-MM-DD"),
+                    cacObjetivo: z.number().optional().describe("CAC objetivo en pesos (default 300)"),
+                })),
+                execute: async ({ dateFrom, dateTo, cacObjetivo = 300 }) => {
+                    try {
+                        const { data, error } = await supabase.rpc("meta_campaign_ranking_reco", {
+                            p_from: dateFrom,
+                            p_to: dateTo,
+                            p_limit: 50,
+                            p_min_conversations: 5,
+                            p_cac_objetivo: cacObjetivo,
+                            p_ctr_min: 1.5,
+                            p_freq_max: 3.0,
+                        });
+                        if (error) { console.error("[getMetaCampanias]", error); return `Error: ${error.message}`; }
+                        if (!data) return "Sin datos de campañas para ese período.";
+                        return { type: "metaCampanias", rows: data };
+                    } catch { return "No se pudieron obtener los datos de campañas de Meta."; }
+                },
+            }),
+
+            getMetaAdsets: tool({
+                description:
+                    "Ranking y recomendaciones de conjuntos de anuncios (ad sets) de Meta Ads. Usar para 'conjuntos de anuncios', 'ad sets de Meta', 'detalle de grupos de anuncios', 'qué ad set optimizar'.",
+                inputSchema: zodSchema(z.object({
+                    dateFrom: z.string().describe("Fecha inicio YYYY-MM-DD"),
+                    dateTo: z.string().describe("Fecha fin YYYY-MM-DD"),
+                    cacObjetivo: z.number().optional().describe("CAC objetivo en pesos (default 300)"),
+                })),
+                execute: async ({ dateFrom, dateTo, cacObjetivo = 300 }) => {
+                    try {
+                        const { data, error } = await supabase.rpc("meta_adset_ranking_reco", {
+                            p_from: dateFrom,
+                            p_to: dateTo,
+                            p_limit: 50,
+                            p_min_conversations: 5,
+                            p_cac_objetivo: cacObjetivo,
+                            p_ctr_min: 1.5,
+                            p_freq_max: 3.0,
+                        });
+                        if (error) { console.error("[getMetaAdsets]", error); return `Error: ${error.message}`; }
+                        if (!data) return "Sin datos de ad sets para ese período.";
+                        return { type: "metaAdsets", rows: data };
+                    } catch { return "No se pudieron obtener los datos de ad sets de Meta."; }
+                },
+            }),
+
+            getMetaTimeseries: tool({
+                description:
+                    "Serie temporal de Meta Ads: evolución diaria de gasto, conversaciones y CAC comparando vs período anterior o año anterior. Usar para 'evolución de campañas en el tiempo', 'tendencia de Meta Ads', 'gasto diario en publicidad', 'comparar rendimiento de ads vs antes'.",
+                inputSchema: zodSchema(z.object({
+                    dateFrom: z.string().describe("Fecha inicio YYYY-MM-DD"),
+                    dateTo: z.string().describe("Fecha fin YYYY-MM-DD"),
+                    compare: z.enum(["prev", "yoy"]).optional().describe("Modo de comparación: 'prev' = período anterior, 'yoy' = mismo período año anterior (default: 'prev')"),
+                })),
+                execute: async ({ dateFrom, dateTo, compare = "prev" }) => {
+                    try {
+                        const { data, error } = await supabase.rpc("meta_home_timeseries_mixed", {
+                            p_from: dateFrom,
+                            p_to: dateTo,
+                            p_compare: compare,
+                            p_conv_level: "campaign",
+                        });
+                        if (error) { console.error("[getMetaTimeseries]", error); return `Error: ${error.message}`; }
+                        if (!data) return "Sin datos de serie temporal de Meta para ese período.";
+                        return { type: "metaTimeseries", compare, rows: data };
+                    } catch { return "No se pudieron obtener la serie temporal de Meta Ads."; }
+                },
+            }),
         },
 
         onFinish: async ({ text, steps }) => {

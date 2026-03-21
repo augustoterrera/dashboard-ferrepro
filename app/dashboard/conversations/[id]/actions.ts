@@ -3,6 +3,16 @@
 import { createClient } from "@/lib/supabase/server"
 import type { DBMessage } from "@/types/chat"
 
+export async function getConversationTitle(id: string): Promise<string> {
+    const supabase = await createClient()
+    const { data } = await supabase
+        .from("conversations")
+        .select("title")
+        .eq("id", id)
+        .single()
+    return (data?.title as string) ?? "Nueva conversación"
+}
+
 export async function getMessages(id: string): Promise<{ success: boolean; messages: DBMessage[] }> {
     const supabase = await createClient()
     const { data, error } = await supabase

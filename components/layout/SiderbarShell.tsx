@@ -73,7 +73,7 @@ const GROUPS: NavGroup[] = [
     href: '/dashboard/conversations',
     baseHref: '/dashboard/conversations',
     icon: MessageSquare,
-    children: [{ label: 'Conversaciones', href: '/dashboard/conversations' }],
+    children: [],
   },
 ];
 
