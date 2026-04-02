@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { createClient } from "@supabase/supabase-js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!,
+);
 
 function verifyToken(token: string): string | null {
   try {
@@ -50,7 +55,10 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    await db`UPDATE users SET password_hash = ${passwordHash} WHERE email = ${email}`;
+    await supabase
+      .from("users")
+      .update({ password_hash: passwordHash })
+      .eq("email", email);
 
     return NextResponse.json({ ok: true });
   } catch {
