@@ -3,10 +3,21 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { createClient } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 
-// Extender tipos de next-auth para incluir id en la sesión
 declare module "next-auth" {
   interface Session {
-    user: { id: string } & DefaultSession["user"];
+    user: {
+      id: string;
+      role: string;
+      id_sucursal: number | null;
+    } & DefaultSession["user"];
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: string;
+    id_sucursal: number | null;
   }
 }
 
@@ -21,15 +32,14 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const supabase = createClient()
+        const supabase = createClient();
 
         const { data: user, error } = await supabase
-        .from("users")
-        .select("id, email, name, password_hash")
-        .eq("email", credentials.email)
-        .single();
-        
-        console.log("Error fetching user from Supabase:", error)
+          .from("users")
+          .select("id, email, name, password_hash, role, id_sucursal")
+          .eq("email", credentials.email)
+          .single();
+
         if (error || !user || !user.password_hash) return null;
 
         const valid = await bcrypt.compare(credentials.password, user.password_hash);
@@ -39,6 +49,8 @@ export const authOptions: NextAuthOptions = {
           id: String(user.id),
           email: user.email,
           name: user.name ?? null,
+          role: user.role ?? "branch",
+          id_sucursal: user.id_sucursal ?? null,
         };
       },
     }),
@@ -50,11 +62,19 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        token.role = (user as unknown as { role: string }).role;
+        token.id_sucursal = (user as unknown as { id_sucursal: number | null }).id_sucursal;
+      }
       return token;
     },
     session({ session, token }) {
-      if (session.user) (session.user as { id: string }).id = token.id as string;
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.id_sucursal = token.id_sucursal;
+      }
       return session;
     },
   },
