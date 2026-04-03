@@ -7,6 +7,7 @@ export async function getFinanzasResumen(params: {
   from: string;
   to: string;
   empresaId?: number;
+  sucursalId?: number | null;
 }) {
   const supabase = await createClient();
 
@@ -14,6 +15,7 @@ export async function getFinanzasResumen(params: {
     p_from: params.from,
     p_to: params.to,
     p_empresa: params.empresaId ?? 3526,
+    p_sucursal: params.sucursalId ?? null,
   });
 
   if (error) {
@@ -30,6 +32,7 @@ export async function getVentasComparacion(params: {
   from: string;
   to: string;
   empresaId?: number | null;
+  sucursalId?: number | null;
 }) {
   const supabase = await createClient();
 
@@ -39,6 +42,7 @@ export async function getVentasComparacion(params: {
       p_from: params.from,
       p_to: params.to,
       p_empresa: params.empresaId ?? null,
+      p_sucursal: params.sucursalId ?? null,
     },
   );
 
@@ -50,6 +54,7 @@ export async function getVentasYoY(params: {
   from: string;
   to: string;
   empresaId?: number | null;
+  sucursalId?: number | null;
 }) {
   const supabase = await createClient();
 
@@ -57,6 +62,7 @@ export async function getVentasYoY(params: {
     p_from: params.from,
     p_to: params.to,
     p_empresa: params.empresaId ?? null,
+    p_sucursal: params.sucursalId ?? null,
   });
 
   if (error) throw new Error(error.message);
@@ -67,6 +73,7 @@ type RangeArgs = {
   from: string;
   to: string;
   empresaId?: number | null;
+  sucursalId?: number | null;
 };
 
 type ProductosQueryArgs = RangeArgs & {
@@ -85,7 +92,7 @@ function unwrapRpcError(error: any) {
 export async function getProductosPorFacturacion(args: ProductosQueryArgs) {
   const supabase = await createClient();
 
-  const { from, to, empresaId = null, q = null, sku = null } = args;
+  const { from, to, empresaId = null, sucursalId = null, q = null, sku = null } = args;
   const limit = args.limit ?? 20;
   const offset = args.offset ?? 0;
 
@@ -93,6 +100,7 @@ export async function getProductosPorFacturacion(args: ProductosQueryArgs) {
     p_from: from,
     p_to: to,
     p_empresa: empresaId,
+    p_sucursal: sucursalId,
     p_sku: sku,
     p_q: q,
     p_limit: limit,
@@ -106,7 +114,7 @@ export async function getProductosPorFacturacion(args: ProductosQueryArgs) {
 export async function getProductosPorUnidades(args: ProductosQueryArgs) {
   const supabase = await createClient();
 
-  const { from, to, empresaId = null, q = null, sku = null } = args;
+  const { from, to, empresaId = null, sucursalId = null, q = null, sku = null } = args;
   const limit = args.limit ?? 20;
   const offset = args.offset ?? 0;
 
@@ -114,6 +122,7 @@ export async function getProductosPorUnidades(args: ProductosQueryArgs) {
     p_from: from,
     p_to: to,
     p_empresa: empresaId,
+    p_sucursal: sucursalId,
     p_sku: sku,
     p_q: q,
     p_limit: limit,
@@ -128,14 +137,16 @@ export async function getProductosKpis(args: {
   from: string;
   to: string;
   empresaId?: number | null;
+  sucursalId?: number | null;
 }) {
   const supabase = await createClient();
-  const { from, to, empresaId = null } = args;
+  const { from, to, empresaId = null, sucursalId = null } = args;
 
   const { data, error } = await supabase.rpc("get_productos_kpis", {
-    p_empresa: empresaId,  // ← PRIMERO (no uses ?? null aquí)
-    p_from: from,          // ← SEGUNDO
-    p_to: to,              // ← TERCERO
+    p_empresa: empresaId,
+    p_from: from,
+    p_to: to,
+    p_sucursal: sucursalId,
   });
 
   if (error) unwrapRpcError(error);
@@ -147,15 +158,17 @@ export async function getPareto80(args: {
   from: string;
   to: string;
   empresaId?: number | null;
-  umbral?: number;      // default 0.80
-  only80?: boolean;     // default true
-  limit?: number;       // default 200
+  sucursalId?: number | null;
+  umbral?: number;
+  only80?: boolean;
+  limit?: number;
 }) {
   const supabase = await createClient();
   const {
     from,
     to,
     empresaId = null,
+    sucursalId = null,
     umbral = 0.8,
     only80 = true,
     limit = 200,
@@ -165,6 +178,7 @@ export async function getPareto80(args: {
     p_from: from,
     p_to: to,
     p_empresa: empresaId,
+    p_sucursal: sucursalId,
     p_umbral: umbral,
     p_only_80: only80,
     p_limit: limit,
@@ -178,16 +192,18 @@ export async function getParetoComparacion(args: {
   from: string;
   to: string;
   empresaId?: number | null;
-  umbral?: number;         // default 0.80
-  limitChanges?: number;   // default 200
+  sucursalId?: number | null;
+  umbral?: number;
+  limitChanges?: number;
 }) {
   const supabase = await createClient();
-  const { from, to, empresaId = null, umbral = 0.8, limitChanges = 200 } = args;
+  const { from, to, empresaId = null, sucursalId = null, umbral = 0.8, limitChanges = 200 } = args;
 
   const { data, error } = await supabase.rpc("get_pareto_a_comparacion", {
     p_from: from,
     p_to: to,
     p_empresa: empresaId,
+    p_sucursal: sucursalId,
     p_umbral: umbral,
     p_limit_changes: limitChanges,
   });
@@ -200,16 +216,18 @@ export async function getParetoComparacionYoY(args: {
   from: string;
   to: string;
   empresaId?: number | null;
-  umbral?: number;         // default 0.80
-  limitChanges?: number;   // default 200
+  sucursalId?: number | null;
+  umbral?: number;
+  limitChanges?: number;
 }) {
   const supabase = await createClient();
-  const { from, to, empresaId = null, umbral = 0.8, limitChanges = 200 } = args;
+  const { from, to, empresaId = null, sucursalId = null, umbral = 0.8, limitChanges = 200 } = args;
 
   const { data, error } = await supabase.rpc("get_pareto_yoy_comparacion", {
     p_from: from,
     p_to: to,
     p_empresa: empresaId,
+    p_sucursal: sucursalId,
     p_umbral: umbral,
     p_limit_changes: limitChanges,
   });
@@ -221,15 +239,17 @@ export async function getParetoComparacionYoY(args: {
 export async function getTopMetodosPago(args: {
   from?: string | null;
   to?: string | null;
-  limit?: number; // default 5
+  limit?: number;
+  sucursalId?: number | null;
 }) {
   const supabase = await createClient();
-  const { from = null, to = null, limit = 5 } = args;
+  const { from = null, to = null, limit = 5, sucursalId = null } = args;
 
   const { data, error } = await supabase.rpc("get_top_metodos_pago", {
     p_from: from,
     p_to: to,
     p_limit: limit,
+    p_sucursal: sucursalId,
   });
 
   if (error) unwrapRpcError(error);

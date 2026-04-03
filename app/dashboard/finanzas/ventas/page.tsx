@@ -1,4 +1,6 @@
 import { headers } from "next/headers";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { DateRangeBar } from "@/components/filters/DateRangeBar";
 import { VentasCompareLineChart } from "@/components/charts/VentasCompareLineChart";
 import { getVentasComparacion, getVentasYoY, getTopMetodosPago } from "@/lib/data/finanzas";
@@ -62,6 +64,9 @@ export default async function VentasPage({
     searchParams: Promise<{ from?: string; to?: string; compare?: string }>;
 }) {
     headers();
+    const session = await getServerSession(authOptions);
+    const sucursalId = session?.user?.role === "admin" ? null : (session?.user?.id_sucursal ?? null);
+
     const sp = await searchParams;
 
     const defaultFrom = "2026-01-04";
@@ -78,8 +83,8 @@ export default async function VentasPage({
     let data: any;
     try {
         data = compare === "yoy"
-            ? await getVentasYoY({ from, to, empresaId: null })
-            : await getVentasComparacion({ from, to, empresaId: null });
+            ? await getVentasYoY({ from, to, empresaId: null, sucursalId })
+            : await getVentasComparacion({ from, to, empresaId: null, sucursalId });
     } catch (e: any) {
         return <div className="p-10 text-red-500">Error: {e.message}</div>;
     }
@@ -92,7 +97,7 @@ export default async function VentasPage({
     }));
     let metodosPago: any;
     try {
-        metodosPago = await getTopMetodosPago({ from, to, limit: 5 });
+        metodosPago = await getTopMetodosPago({ from, to, limit: 5, sucursalId });
         console.log("metodosPago", metodosPago?.slice?.(0, 3), "len", metodosPago?.length);
     } catch (e: any) {
         metodosPago = []; 

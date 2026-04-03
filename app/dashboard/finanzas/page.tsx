@@ -1,4 +1,6 @@
 import { headers } from 'next/headers';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { VentasLineChart } from "@/components/charts/VentasLineChart";
 import { getFinanzasResumen } from "@/lib/data/finanzas";
 import { InfoTip } from '@/components/info-tip';
@@ -35,6 +37,9 @@ function KPI({
 export default async function FinanzasPage() {
   await headers();
 
+  const session = await getServerSession(authOptions);
+  const sucursalId = session?.user?.role === "admin" ? null : (session?.user?.id_sucursal ?? null);
+
   // Gestión de fechas (Últimos 30 días)
   const to = new Date().toISOString().split('T')[0];
   const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -48,7 +53,7 @@ export default async function FinanzasPage() {
 
   let data;
   try {
-    data = await getFinanzasResumen({ from, to });
+    data = await getFinanzasResumen({ from, to, sucursalId });
   } catch (e: any) {
     return (
       <div className="m-8 rounded-xl border border-red-900/30 bg-red-900/10 p-6 text-red-500">

@@ -1,4 +1,6 @@
 import { headers } from "next/headers";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { DateRangeBar } from "@/components/filters/DateRangeBar";
 import { getProductosPorFacturacion, getProductosPorUnidades, getProductosKpis } from "@/lib/data/finanzas";
 import { ProductosFilters } from "@/components/finanzas/ProductosFilters";
@@ -53,7 +55,9 @@ export default async function ProductosPage({
 }: {
     searchParams: Promise<{ from?: string; to?: string; tab?: string; q?: string; page?: string }>;
 }) {
-    headers(); 
+    headers();
+    const session = await getServerSession(authOptions);
+    const sucursalId = session?.user?.role === "admin" ? null : (session?.user?.id_sucursal ?? null);
 
     const sp = await searchParams;
 
@@ -72,12 +76,12 @@ export default async function ProductosPage({
 
     const data =
         tab === "unidades"
-            ? await getProductosPorUnidades({ from, to, empresaId: null, q: q || null, limit, offset })
-            : await getProductosPorFacturacion({ from, to, empresaId: null, q: q || null, limit, offset });
+            ? await getProductosPorUnidades({ from, to, empresaId: null, sucursalId, q: q || null, limit, offset })
+            : await getProductosPorFacturacion({ from, to, empresaId: null, sucursalId, q: q || null, limit, offset });
 
     const rows = data?.rows ?? [];
 
-    const kpisData = await getProductosKpis({ from, to, empresaId: null });
+    const kpisData = await getProductosKpis({ from, to, empresaId: null, sucursalId });
 
     const k = kpisData?.kpis ?? {};
     const topFact = kpisData?.top?.por_facturacion ?? null;

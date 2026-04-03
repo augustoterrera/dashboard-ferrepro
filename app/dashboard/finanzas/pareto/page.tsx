@@ -1,3 +1,5 @@
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getPareto80, getParetoComparacion, getParetoComparacionYoY } from "@/lib/data/finanzas";
 import type { Pareto80Response, ParetoComparacionResponse } from "@/types/pareto";
 import { ParetoView } from "./ui/ParetoView";
@@ -24,6 +26,9 @@ export default async function Page({
 }) {
   const sp = await searchParams;
 
+  const session = await getServerSession(authOptions);
+  const sucursalId = session?.user?.role === "admin" ? null : (session?.user?.id_sucursal ?? null);
+
   const defaultTo = todayISO();
   const defaultFrom = daysAgoISO(29);
 
@@ -31,15 +36,15 @@ export default async function Page({
   const to = clampDate(sp.to ?? null, defaultTo);
   const compare = (sp.compare === "yoy" ? "yoy" : "prev") as "prev" | "yoy";
 
-  // Ajustá si vos sacás empresaId desde sesión/usuario.
   const empresaId = null;
 
   const pareto80 = (await getPareto80({
     from,
     to,
     empresaId,
+    sucursalId,
     umbral: 0.8,
-    only80: false, // para poder ver A vs no-A en tabla si querés
+    only80: false,
     limit: 200,
   })) as Pareto80Response;
 
@@ -49,6 +54,7 @@ export default async function Page({
         from,
         to,
         empresaId,
+        sucursalId,
         umbral: 0.8,
         limitChanges: 200,
       })) as ParetoComparacionResponse)
@@ -56,6 +62,7 @@ export default async function Page({
         from,
         to,
         empresaId,
+        sucursalId,
         umbral: 0.8,
         limitChanges: 200,
       })) as ParetoComparacionResponse);

@@ -1,6 +1,8 @@
 import { streamText, tool, convertToModelMessages, zodSchema, stepCountIs } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { createClient } from "@/lib/supabase/server";
 import { getSystemPrompt } from "@/lib/constans";
 
@@ -13,6 +15,9 @@ export async function POST(
     const { conversationId } = await params;
     console.log("[chat/route] POST conversationId:", conversationId);
     const { messages } = await req.json();
+
+    const session = await getServerSession(authOptions);
+    const sucursalId = session?.user?.role === "admin" ? null : (session?.user?.id_sucursal ?? null);
 
     const supabase = await createClient();
     const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY! });
@@ -58,6 +63,7 @@ export async function POST(
                             p_from: dateFrom,
                             p_to: dateTo,
                             p_empresa: EMPRESA_ID,
+                            p_sucursal: sucursalId,
                         });
                         if (error || !data) return "No se pudieron obtener los datos para ese período.";
                         return {
@@ -91,6 +97,7 @@ export async function POST(
                             p_from: dateFrom,
                             p_to: dateTo,
                             p_empresa: EMPRESA_ID,
+                            p_sucursal: sucursalId,
                         });
                         if (error || !data) return "No se pudieron obtener los datos para ese período.";
                         return { type: "ventasComparacion", ...data };
@@ -111,6 +118,7 @@ export async function POST(
                             p_from: dateFrom,
                             p_to: dateTo,
                             p_empresa: EMPRESA_ID,
+                            p_sucursal: sucursalId,
                         });
                         if (error || !data) return "No se pudieron obtener los datos para ese período.";
                         return { type: "ventasYOY", ...data };
@@ -131,6 +139,7 @@ export async function POST(
                             p_from: dateFrom,
                             p_to: dateTo,
                             p_empresa: EMPRESA_ID,
+                            p_sucursal: sucursalId,
                             p_umbral: 0.8,
                             p_only_80: true,
                             p_limit: 100,
@@ -154,6 +163,7 @@ export async function POST(
                             p_from: dateFrom,
                             p_to: dateTo,
                             p_empresa: EMPRESA_ID,
+                            p_sucursal: sucursalId,
                             p_umbral: 0.8,
                             p_limit_changes: 200,
                         });
@@ -177,6 +187,7 @@ export async function POST(
                             p_from: dateFrom,
                             p_to: dateTo,
                             p_empresa: EMPRESA_ID,
+                            p_sucursal: sucursalId,
                             p_q: null,
                             p_sku: null,
                             p_limit: limit,
@@ -201,6 +212,7 @@ export async function POST(
                             p_from: dateFrom,
                             p_to: dateTo,
                             p_limit: 10,
+                            p_sucursal: sucursalId,
                         });
                         if (error || !data) return "No se pudieron obtener los datos para ese período.";
                         return { type: "metodosPago", rows: data };
@@ -224,6 +236,7 @@ export async function POST(
                             p_from: dateFrom,
                             p_to: dateTo,
                             p_empresa: EMPRESA_ID,
+                            p_sucursal: sucursalId,
                             p_sku: sku ?? null,
                             p_q: query ?? null,
                             p_limit: limit,
@@ -270,6 +283,7 @@ export async function POST(
                             p_from: dateFrom,
                             p_to: dateTo,
                             p_empresa: EMPRESA_ID,
+                            p_sucursal: sucursalId,
                             p_umbral: 0.8,
                             p_limit_changes: 200,
                         });
@@ -353,6 +367,7 @@ export async function POST(
                             p_empresa: EMPRESA_ID,
                             p_from: dateFrom,
                             p_to: dateTo,
+                            p_sucursal: sucursalId,
                         });
                         if (error) { console.error("[getProductosKpis]", error); return `Error: ${error.message}`; }
                         if (!data) return "Sin datos para ese período.";

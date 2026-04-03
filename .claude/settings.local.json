@@ -7,7 +7,12 @@
       "Bash(pnpm add -D @types/bcryptjs)",
       "Bash(pnpm remove @supabase/ssr @supabase/supabase-js)",
       "Bash(npx tsc --noEmit)",
-      "Bash(find /c/Proyectos/dashboard-ferrepro/app/dashboard -name \"page.tsx\" -exec head -30 {} +)"
+      "Bash(find /c/Proyectos/dashboard-ferrepro/app/dashboard -name \"page.tsx\" -exec head -30 {} +)",
+      "Bash(find /c/Proyectos/dashboard-ferrepro/lib -type f -name *.ts -o -name *.tsx)",
+      "Bash(npm install:*)",
+      "Bash(ls c:/Proyectos/dashboard-ferrepro/.env*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm add:*)"
     ]
   }
 }
