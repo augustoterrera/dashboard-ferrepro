@@ -2,13 +2,12 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getSession } from "@/lib/get-session";
 
 export async function setSelectedSucursal(id: number | null) {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
   // Solo admins pueden cambiar la sucursal activa
-  if (!session?.user || (session.user as any).role !== "admin") return;
+  if (!session?.user || session.user.role !== "admin") return;
 
   const cookieStore = await cookies();
 

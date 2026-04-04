@@ -1,6 +1,5 @@
 import { connection } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getSession } from "@/lib/get-session";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Users, Building2, ShieldCheck, ArrowRight, Activity } from "lucide-react";
@@ -62,7 +61,7 @@ function StatCard({
 }
 
 export default async function SuperadminPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
   const stats = await getOverviewStats();
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";

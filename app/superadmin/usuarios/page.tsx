@@ -1,6 +1,5 @@
 import { connection } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getSession } from "@/lib/get-session";
 import { createClient } from "@/lib/supabase/server";
 import { UsuariosClient } from "./ui/UsuariosClient";
 import { Users } from "lucide-react";
@@ -26,7 +25,7 @@ async function getData() {
 }
 
 export default async function UsuariosPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
   const { users, sucursales } = await getData();
 
   return (

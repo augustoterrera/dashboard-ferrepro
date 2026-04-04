@@ -1,6 +1,5 @@
 import { SidebarShell } from "@/components/layout/SiderbarShell";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getSession } from "@/lib/get-session";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
@@ -10,10 +9,10 @@ export default async function DashboardGate({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
   if (!session) redirect("/auth/login");
 
-  const role = (session.user as any)?.role ?? "branch";
+  const role = session.user?.role ?? "branch";
 
   // Para admin: cargar lista de sucursales activas y leer la selección actual
   let sucursales: { id: number; nombre: string }[] = [];
