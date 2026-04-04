@@ -1,6 +1,6 @@
 import NextAuth, { type NextAuthOptions, type DefaultSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { createClient } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import bcrypt from "bcryptjs";
 
 declare module "next-auth" {
@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const supabase = createClient();
+        const supabase = await createClient();
 
         const { data: user, error } = await supabase
           .from("users")

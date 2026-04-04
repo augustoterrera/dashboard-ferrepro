@@ -3,40 +3,29 @@ import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!,
-);
-
 // Token válido por 15 minutos
 const TOKEN_TTL_MS = 15 * 60 * 1000;
 
 function signToken(email: string): string {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error("NEXTAUTH_SECRET no definido");
+
   const payload = `${email}:${Date.now() + TOKEN_TTL_MS}`;
-  const secret = process.env.NEXTAUTH_SECRET ?? "fallback-secret";
-  const hmac = crypto
-    .createHmac("sha256", secret)
-    .update(payload)
-    .digest("hex");
+  const hmac = crypto.createHmac("sha256", secret).update(payload).digest("hex");
   return Buffer.from(`${payload}:${hmac}`).toString("base64url");
 }
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT ?? 587),
-  secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
 
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
-    if (!email) {
+    if (!email || typeof email !== "string") {
       return NextResponse.json({ error: "Email requerido" }, { status: 400 });
     }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!,
+    );
 
     // Verificar que el usuario exista
     const { data: users } = await supabase
@@ -44,6 +33,7 @@ export async function POST(req: Request) {
       .select("id")
       .eq("email", email)
       .limit(1);
+
     if (!users?.[0]) {
       // Respuesta genérica para no revelar si el email existe
       return NextResponse.json({ ok: true });
@@ -51,6 +41,16 @@ export async function POST(req: Request) {
 
     const token = signToken(email);
     const resetUrl = `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/auth/update-password?token=${token}`;
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT ?? 587),
+      secure: process.env.SMTP_SECURE === "true",
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
 
     await transporter.sendMail({
       from: `"${process.env.SMTP_FROM_NAME ?? "Soporte"}" <${process.env.SMTP_FROM_EMAIL}>`,

@@ -10,11 +10,15 @@ import {
   Megaphone,
   ChevronRight,
   MessageSquare,
+  ShieldCheck,
+  Menu,
   LucideIcon
 } from 'lucide-react';
 import { LogoutButton } from '../logout-button';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { SucursalSelector } from './SucursalSelector';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // --- Tipos ---
 type NavChild = {
@@ -75,14 +79,39 @@ const GROUPS: NavGroup[] = [
     icon: MessageSquare,
     children: [],
   },
+  {
+    key: 'superadmin',
+    label: 'Super Admin',
+    href: '/dashboard/superadmin',
+    baseHref: '/dashboard/superadmin',
+    icon: ShieldCheck,
+    children: [
+      { label: 'Overview', href: '/dashboard/superadmin' },
+      { label: 'Usuarios', href: '/dashboard/superadmin/usuarios' },
+      { label: 'Sucursales', href: '/dashboard/superadmin/sucursales' },
+    ],
+  },
 ];
 
-export function SidebarShell({ children }: { children: React.ReactNode }) {
+interface SidebarShellProps {
+  children: React.ReactNode;
+  role?: string;
+  sucursales?: { id: number; nombre: string }[];
+  selectedSucursalId?: number | null;
+}
+
+export function SidebarShell({ children, role, sucursales = [], selectedSucursalId = null }: SidebarShellProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [mounted, setMounted] = useState(false);
+
+  const visibleGroups = role === 'superadmin'
+    ? GROUPS.filter(g => g.key === 'superadmin')
+    : GROUPS.filter(g => g.key !== 'superadmin' && (g.key !== 'marketing' || role === 'admin'));
 
   // Evitar flash en hidratación
   useEffect(() => {
@@ -100,6 +129,11 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
     if (!mounted) return;
     localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0');
   }, [collapsed, mounted]);
+
+  // Cerrar sidebar mobile al navegar
+  useEffect(() => {
+    if (isMobile) setMobileOpen(false);
+  }, [pathname, isMobile]);
 
   // Auto-abrir grupo basado en la URL (solo si no está colapsado)
   useEffect(() => {
@@ -152,10 +186,20 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-dvh bg-slate-950 overflow-hidden font-sans antialiased text-slate-200">
       <div className="flex h-full">
+        {/* Backdrop mobile */}
+        {isMobile && mobileOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+
         <aside
           className={cn(
             "h-full flex flex-col transition-all duration-300 ease-in-out border-r border-slate-800 bg-slate-900 relative",
-            collapsed ? 'w-20' : 'w-72'
+            isMobile
+              ? cn("fixed top-0 left-0 z-50 w-72", mobileOpen ? "translate-x-0" : "-translate-x-full")
+              : collapsed ? 'w-20' : 'w-72'
           )}
         >
           {/* --- HEADER --- */}
@@ -201,21 +245,34 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
               )}
             </div>
 
-            {/* Botón de colapso flotante */}
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className="absolute -right-3.5 top-8 flex h-7 w-7 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-slate-400 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all duration-300 shadow-xl z-50 group"
-            >
-              <ChevronRight
-                size={14}
-                className={cn("transition-transform duration-300", !collapsed && "rotate-180")}
-              />
-            </button>
+            {/* Botón de colapso flotante (solo desktop) */}
+            {!isMobile && (
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="absolute -right-3.5 top-8 flex h-7 w-7 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-slate-400 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all duration-300 shadow-xl z-50 group"
+              >
+                <ChevronRight
+                  size={14}
+                  className={cn("transition-transform duration-300", !collapsed && "rotate-180")}
+                />
+              </button>
+            )}
           </div>
+
+          {/* --- SELECTOR DE SUCURSAL (solo admin) --- */}
+          {role === 'admin' && sucursales.length > 0 && (
+            <div className="border-b border-slate-800/50">
+              <SucursalSelector
+                sucursales={sucursales}
+                selectedId={selectedSucursalId}
+                collapsed={collapsed}
+              />
+            </div>
+          )}
 
           {/* --- NAVEGACIÓN --- */}
           <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-2 custom-scrollbar">
-            {GROUPS.map((g) => {
+            {visibleGroups.map((g) => {
               const groupIsActive = g.baseHref && pathname.startsWith(g.baseHref);
               const isOpen = openGroups.has(g.key);
               const Icon = g.icon;
@@ -308,7 +365,17 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
         {/* --- MAIN CONTENT AREA --- */}
         <main className="flex-1 min-w-0 h-full bg-slate-950 overflow-hidden relative">
           {/* Decoración de luz ambiental en el fondo */}
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600/5 blur-[120px] rounded-full -mr-64 -mt-64 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-150 h-150 bg-blue-600/5 blur-[120px] rounded-full -mr-64 -mt-64 pointer-events-none" />
+
+          {/* Botón hamburguesa mobile */}
+          {isMobile && (
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="absolute top-4 left-4 z-30 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all duration-200 shadow-lg"
+            >
+              <Menu size={18} />
+            </button>
+          )}
 
           <div className="h-full p-8 overflow-y-auto scroll-smooth relative z-10 custom-scrollbar">
             {/* Animación de entrada para el contenido de la página */}

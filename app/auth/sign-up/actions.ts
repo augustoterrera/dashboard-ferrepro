@@ -1,5 +1,5 @@
 "use server";
-import { createClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import bcrypt from "bcryptjs";
 
 export async function register(email: string, password: string) {
