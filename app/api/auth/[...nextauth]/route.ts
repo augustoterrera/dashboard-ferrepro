@@ -1,25 +1,7 @@
-import NextAuth, { type NextAuthOptions, type DefaultSession } from "next-auth";
+import NextAuth, { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { createClient } from "@/lib/supabase/server";
 import bcrypt from "bcryptjs";
-
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      role: string;
-      id_sucursal: number | null;
-    } & DefaultSession["user"];
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    role: string;
-    id_sucursal: number | null;
-  }
-}
 
 export const authOptions: NextAuthOptions = {
   providers: [

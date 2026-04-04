@@ -1,3 +1,17 @@
-// JWT and Session augmentations are declared in app/api/auth/[...nextauth]/route.ts
-// This file is intentionally empty to avoid duplicate declaration conflicts.
-export {};
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: string;
+    id_sucursal: number | null;
+  }
+}
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      role: string;
+      id_sucursal: number | null;
+    } & DefaultSession["user"];
+  }
+}
