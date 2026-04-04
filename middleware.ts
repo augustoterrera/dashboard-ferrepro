@@ -3,12 +3,9 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
-  const array = new Uint8Array(16);
-  crypto.getRandomValues(array);
-  const nonce = btoa(String.fromCharCode(...array));
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'`,
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://wsupabasew.waichatt.com",
     "font-src 'self'",
@@ -19,7 +16,6 @@ export async function middleware(request: NextRequest) {
   ].join("; ");
 
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("content-security-policy", csp);
 
   // Fix: cuando el tunnel añade x-forwarded-host, Next.js lo compara con el
