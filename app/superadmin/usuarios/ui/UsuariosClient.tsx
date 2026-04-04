@@ -12,6 +12,12 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.El
   branch:     { label: "Branch",      color: "bg-slate-800 text-slate-400 border border-slate-700/50", icon: User },
 };
 
+const ROLE_AVATAR: Record<string, string> = {
+  superadmin: "bg-rose-600/20 text-rose-400",
+  admin:      "bg-blue-600/20 text-blue-400",
+  branch:     "bg-slate-700 text-slate-400",
+};
+
 function RoleBadge({ role }: { role: string }) {
   const cfg = ROLE_CONFIG[role] ?? ROLE_CONFIG.branch;
   return (
@@ -114,56 +120,58 @@ export function UsuariosClient({
         <div className="mb-4 rounded-xl border border-rose-900/40 bg-rose-900/20 px-4 py-3 text-sm text-rose-400">{error}</div>
       )}
 
-      {/* Table */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-800 text-left text-[10px] font-black uppercase tracking-widest text-slate-600">
-              <th className="px-4 py-3">Nombre</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Rol</th>
-              <th className="px-4 py-3">Sucursal</th>
-              <th className="px-4 py-3 w-20"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800/50">
-            {users.length === 0 ? (
-              <tr>
-                <td colSpan={5}>
-                  <div className="flex flex-col items-center justify-center py-14 gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-800 text-slate-600">
-                      <Users size={22} />
-                    </div>
-                    <p className="text-sm text-slate-600 font-medium">Sin usuarios registrados</p>
-                    <button
-                      onClick={openCreate}
-                      className="text-xs text-blue-500 hover:text-blue-400 font-semibold transition-colors"
-                    >
-                      Crear el primer usuario →
-                    </button>
+      {/* Cards grid */}
+      {users.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-800 text-slate-600">
+            <Users size={22} />
+          </div>
+          <p className="text-sm text-slate-600 font-medium">Sin usuarios registrados</p>
+          <button
+            onClick={openCreate}
+            className="text-xs text-blue-500 hover:text-blue-400 font-semibold transition-colors"
+          >
+            Crear el primer usuario →
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {users.map((u) => {
+            const avatarClass = ROLE_AVATAR[u.role] ?? ROLE_AVATAR.branch;
+            const initial = (u.name ?? u.email ?? "?").charAt(0).toUpperCase();
+            const suc = sucursalName(u.id_sucursal);
+            return (
+              <div
+                key={u.id}
+                className="group relative rounded-2xl border border-slate-700/50 bg-slate-800/40 p-4 hover:bg-slate-800/70 hover:border-slate-600 transition-all"
+              >
+                {/* Avatar + name + email */}
+                <div className="flex items-start gap-3 mb-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black ${avatarClass}`}>
+                    {initial}
                   </div>
-                </td>
-              </tr>
-            ) : users.map((u) => (
-              <tr key={u.id} className="group hover:bg-slate-800/30 transition-colors">
-                <td className="px-4 py-3">
-                  <span className="font-medium text-slate-200">
-                    {u.name ?? <span className="text-slate-600 italic text-xs">Sin nombre</span>}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-slate-400 font-mono text-xs">{u.email}</td>
-                <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
-                <td className="px-4 py-3">
-                  {sucursalName(u.id_sucursal)
-                    ? <span className="text-slate-400 text-xs">{sucursalName(u.id_sucursal)}</span>
-                    : <span className="text-slate-700 text-xs">—</span>
-                  }
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-100 truncate leading-tight">
+                      {u.name ?? <span className="italic text-slate-500 font-normal">Sin nombre</span>}
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-mono truncate mt-0.5">{u.email}</p>
+                  </div>
+                </div>
+
+                {/* Role + sucursal */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-col gap-1.5">
+                    <RoleBadge role={u.role} />
+                    {suc && (
+                      <span className="text-[10px] text-slate-600 font-medium">{suc}</span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => openEdit(u)}
-                      className="rounded-lg p-1.5 text-slate-600 hover:bg-slate-700 hover:text-blue-400 transition-colors"
+                      className="rounded-lg p-2 text-slate-600 hover:bg-slate-700 hover:text-blue-400 transition-colors"
                       title="Editar"
                     >
                       <Pencil size={14} />
@@ -171,19 +179,19 @@ export function UsuariosClient({
                     {u.id !== currentUserId && (
                       <button
                         onClick={() => setDeleteTarget(u)}
-                        className="rounded-lg p-1.5 text-slate-600 hover:bg-slate-700 hover:text-rose-400 transition-colors"
+                        className="rounded-lg p-2 text-slate-600 hover:bg-slate-700 hover:text-rose-400 transition-colors"
                         title="Eliminar"
                       >
                         <Trash2 size={14} />
                       </button>
                     )}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Create / Edit Modal */}
       {mode && (

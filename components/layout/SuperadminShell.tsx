@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, LayoutDashboard, Users, Building2, LucideIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ShieldCheck, LayoutDashboard, Users, Building2, LucideIcon, Menu } from 'lucide-react';
 import { LogoutButton } from '../logout-button';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type NavItem = {
   label: string;
@@ -27,11 +29,33 @@ type Props = {
 
 export function SuperadminShell({ children, user }: Props) {
   const pathname = usePathname();
+  const isMobile = useIsMobile();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Cerrar sidebar mobile al navegar
+  useEffect(() => {
+    if (isMobile) setMobileOpen(false);
+  }, [pathname, isMobile]);
 
   return (
     <div className="h-dvh bg-slate-950 overflow-hidden font-sans antialiased text-slate-200">
       <div className="flex h-full">
-        <aside className="h-full w-64 flex flex-col border-r border-slate-800 bg-slate-900">
+        {/* Backdrop mobile */}
+        {isMobile && mobileOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+
+        <aside
+          className={cn(
+            "h-full flex flex-col border-r border-slate-800 bg-slate-900 transition-all duration-300 ease-in-out",
+            isMobile
+              ? cn("fixed top-0 left-0 z-50 w-72", mobileOpen ? "translate-x-0" : "-translate-x-full")
+              : "w-64"
+          )}
+        >
           {/* Header */}
           <div className="flex h-20 items-center gap-3 border-b border-slate-800/50 px-5">
             <div className="relative overflow-hidden rounded-lg shrink-0">
@@ -107,7 +131,18 @@ export function SuperadminShell({ children, user }: Props) {
         {/* Main content */}
         <main className="flex-1 min-w-0 h-full bg-slate-950 overflow-hidden relative">
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-rose-600/5 blur-[120px] rounded-full -mr-64 -mt-64 pointer-events-none" />
-          <div className="h-full p-8 overflow-y-auto scroll-smooth relative z-10 custom-scrollbar">
+
+          {/* Botón hamburguesa mobile */}
+          {isMobile && (
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="absolute top-4 left-4 z-30 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white hover:bg-rose-600 hover:border-rose-500 transition-all duration-200 shadow-lg"
+            >
+              <Menu size={18} />
+            </button>
+          )}
+
+          <div className="h-full p-4 pt-14 sm:p-8 overflow-y-auto scroll-smooth relative z-10 custom-scrollbar">
             <div className="max-w-5xl mx-auto">
               {children}
             </div>

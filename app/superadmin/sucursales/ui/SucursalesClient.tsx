@@ -84,70 +84,66 @@ export function SucursalesClient({ initialSucursales }: { initialSucursales: Suc
         <div className="mb-4 rounded-xl border border-rose-900/40 bg-rose-900/20 px-4 py-3 text-sm text-rose-400">{error}</div>
       )}
 
-      {/* Table */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-800 text-left text-[10px] font-black uppercase tracking-widest text-slate-600">
-              <th className="px-4 py-3 w-12">#</th>
-              <th className="px-4 py-3">Nombre</th>
-              <th className="px-4 py-3">Estado</th>
-              <th className="px-4 py-3 w-24"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800/50">
-            {sucursales.length === 0 ? (
-              <tr>
-                <td colSpan={4}>
-                  <div className="flex flex-col items-center justify-center py-14 gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-800 text-slate-600">
-                      <Building2 size={22} />
-                    </div>
-                    <p className="text-sm text-slate-600 font-medium">Sin sucursales creadas</p>
-                    <button
-                      onClick={openCreate}
-                      className="text-xs text-emerald-500 hover:text-emerald-400 font-semibold transition-colors"
-                    >
-                      Crear la primera sucursal →
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ) : sucursales.map((s) => (
-              <tr key={s.id} className="group hover:bg-slate-800/30 transition-colors">
-                <td className="px-4 py-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-xs font-black text-slate-400">{s.id}</span>
-                </td>
-                <td className="px-4 py-3 font-semibold text-slate-200">{s.nombre}</td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${s.activa ? "bg-emerald-900/40 text-emerald-400" : "bg-slate-800 text-slate-500"}`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${s.activa ? "bg-emerald-400" : "bg-slate-600"}`} />
-                    {s.activa ? "Activa" : "Inactiva"}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1">
-                    <button
-                      onClick={() => openEdit(s)}
-                      className="rounded-lg p-1.5 text-slate-600 hover:bg-slate-700 hover:text-emerald-400 transition-colors"
-                      title="Editar"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget(s)}
-                      className="rounded-lg p-1.5 text-slate-600 hover:bg-slate-700 hover:text-rose-400 transition-colors"
-                      title="Eliminar"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Cards grid */}
+      {sucursales.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-800 text-slate-600">
+            <Building2 size={22} />
+          </div>
+          <p className="text-sm text-slate-600 font-medium">Sin sucursales creadas</p>
+          <button
+            onClick={openCreate}
+            className="text-xs text-emerald-500 hover:text-emerald-400 font-semibold transition-colors"
+          >
+            Crear la primera sucursal →
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {sucursales.map((s) => (
+            <div
+              key={s.id}
+              className="group relative rounded-2xl border border-slate-700/50 bg-slate-800/40 p-4 hover:bg-slate-800/70 hover:border-slate-600 transition-all"
+            >
+              {/* Icon + nombre */}
+              <div className="flex items-start gap-3 mb-4">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${s.activa ? "bg-emerald-600/20 text-emerald-400" : "bg-slate-700 text-slate-500"}`}>
+                  <Building2 size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-100 truncate leading-tight">{s.nombre}</p>
+                  <p className="text-[10px] text-slate-600 font-medium mt-0.5">ID #{s.id}</p>
+                </div>
+              </div>
+
+              {/* Estado + acciones */}
+              <div className="flex items-center justify-between">
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${s.activa ? "bg-emerald-900/40 text-emerald-400" : "bg-slate-800 text-slate-500"}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${s.activa ? "bg-emerald-400" : "bg-slate-600"}`} />
+                  {s.activa ? "Activa" : "Inactiva"}
+                </span>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => openEdit(s)}
+                    className="rounded-lg p-2 text-slate-600 hover:bg-slate-700 hover:text-emerald-400 transition-colors"
+                    title="Editar"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(s)}
+                    className="rounded-lg p-2 text-slate-600 hover:bg-slate-700 hover:text-rose-400 transition-colors"
+                    title="Eliminar"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Create / Edit Modal */}
       {mode && (
