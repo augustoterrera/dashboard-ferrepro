@@ -87,25 +87,25 @@ export function MetodosPagoDialog(props: {
             <table className="w-full text-sm">
               <thead className="bg-slate-900/60 border-b border-slate-800">
                 <tr className="text-slate-300">
-                  <th className="px-4 py-3 text-left">
+                  <th className="px-3 sm:px-4 py-3 text-left">
                     <span className="inline-flex items-center gap-2">
                       Método
                       <InfoTip text="Campo factura_pagos.tipo_pago." />
                     </span>
                   </th>
-                  <th className="px-4 py-3 text-right">
+                  <th className="hidden sm:table-cell px-4 py-3 text-right">
                     <span className="inline-flex items-center gap-2 justify-end w-full">
                       Usos
                       <InfoTip text="Cantidad de veces utilizado el método." />
                     </span>
                   </th>
-                  <th className="px-4 py-3 text-right">
+                  <th className="px-3 sm:px-4 py-3 text-right">
                     <span className="inline-flex items-center gap-2 justify-end w-full">
                       Monto
                       <InfoTip text="Suma total pagada con este método." />
                     </span>
                   </th>
-                  <th className="px-4 py-3 text-right">
+                  <th className="px-3 sm:px-4 py-3 text-right">
                     <span className="inline-flex items-center gap-2 justify-end w-full">
                       %
                       <InfoTip text="Participación sobre el total del período." />
@@ -130,16 +130,16 @@ export function MetodosPagoDialog(props: {
                       key={`${r.tipo_pago}-${idx}`}
                       className="hover:bg-slate-800/30 transition-colors"
                     >
-                      <td className="px-4 py-3 font-medium">
+                      <td className="px-3 sm:px-4 py-3 font-medium">
                         {r.tipo_pago || "-"}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono">
+                      <td className="hidden sm:table-cell px-4 py-3 text-right font-mono">
                         {r.cantidad_usos}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono">
+                      <td className="px-3 sm:px-4 py-3 text-right font-mono text-xs sm:text-sm">
                         {moneyARS(r.monto_total)}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-slate-300">
+                      <td className="px-3 sm:px-4 py-3 text-right font-mono text-slate-300">
                         {pct(r.pct_sobre_total)}
                       </td>
                     </tr>

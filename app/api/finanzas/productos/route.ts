@@ -1,10 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveSucursalId } from "@/lib/get-sucursal-id";
 
 export async function GET(req: NextRequest) {
   const token = await getToken({ req });
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const sucursalId = await getActiveSucursalId();
 
   const { searchParams } = new URL(req.url);
 
@@ -25,7 +28,8 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase.rpc(rpcName, {
     p_from: from,
     p_to: to,
-    p_empresa: null, // o tu empresaId
+    p_empresa: null,
+    p_sucursal: sucursalId,
     p_q: q && q.trim() ? q.trim() : null,
     p_limit: limit,
     p_offset: offset,

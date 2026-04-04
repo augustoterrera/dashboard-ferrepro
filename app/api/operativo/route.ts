@@ -1,6 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const token = await getToken({ req });
+  if (!token) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   try {
     const response = await fetch(
       `https://ggwebhookgg.waichatt.com/webhook/chatwoot-db`,

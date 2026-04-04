@@ -46,11 +46,11 @@ export function ParetoComboChart({
       {/* flex-1 hace que este div ocupe todo el espacio sobrante del padre.
           ResponsiveContainer luego llena este div al 100%.
       */}
-      <div className="flex-1 min-h-[300px] w-full">
+      <div className="flex-1 min-h-0 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart 
-            data={data} 
-            margin={{ top: 10, right: 10, bottom: 50, left: 10 }}
+          <ComposedChart
+            data={data}
+            margin={{ top: 8, right: 12, bottom: 16, left: 8 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
             
@@ -61,7 +61,7 @@ export function ParetoComboChart({
               tickLine={false}
               axisLine={{ stroke: "#334155" }}
               interval={0}
-              height={70} // Aumentamos para que los nombres rotados no se salgan
+              height={52}
               tick={(props) => {
                 const { x, y, payload } = props;
                 return (

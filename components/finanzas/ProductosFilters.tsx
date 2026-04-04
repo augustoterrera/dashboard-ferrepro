@@ -70,12 +70,13 @@ export function ProductosFilters({
   };
 
   return (
-    <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex gap-2">
+    <section className="flex flex-col gap-3">
+      {/* Tabs — full width en mobile */}
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
         <button
           type="button"
           onClick={() => setTab("facturacion")}
-          className={`rounded-lg px-3 py-2 text-sm font-semibold ${
+          className={`rounded-lg px-3 py-2.5 sm:py-2 text-sm font-semibold ${
             tab === "facturacion"
               ? "bg-blue-600/20 text-blue-300 ring-1 ring-blue-600/40"
               : "bg-slate-900/40 text-slate-300 ring-1 ring-slate-800"
@@ -87,7 +88,7 @@ export function ProductosFilters({
         <button
           type="button"
           onClick={() => setTab("unidades")}
-          className={`rounded-lg px-3 py-2 text-sm font-semibold ${
+          className={`rounded-lg px-3 py-2.5 sm:py-2 text-sm font-semibold ${
             tab === "unidades"
               ? "bg-blue-600/20 text-blue-300 ring-1 ring-blue-600/40"
               : "bg-slate-900/40 text-slate-300 ring-1 ring-slate-800"
@@ -97,6 +98,7 @@ export function ProductosFilters({
         </button>
       </div>
 
+      {/* Búsqueda + paginación */}
       <div className="flex gap-2">
         <input
           value={localQ}
@@ -105,21 +107,21 @@ export function ProductosFilters({
             if (e.key === "Enter") applySearch();
           }}
           placeholder="Buscar producto..."
-          className="w-full sm:w-80 rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-slate-200 outline-none focus:border-slate-600"
+          className="flex-1 sm:w-80 sm:flex-none rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-slate-200 outline-none focus:border-slate-600"
         />
         <button
           type="button"
           onClick={applySearch}
-          className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold hover:bg-slate-700 disabled:opacity-50"
+          className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold hover:bg-slate-700 disabled:opacity-50 whitespace-nowrap"
           disabled={isPending}
         >
-          {isPending ? "Buscando..." : "Buscar"}
+          {isPending ? "..." : "Buscar"}
         </button>
 
         <button
           type="button"
           onClick={prev}
-          className={`rounded-lg px-3 py-2 text-sm font-semibold ring-1 ring-slate-800 ${
+          className={`hidden sm:block rounded-lg px-3.5 py-2 text-sm font-bold ring-1 ring-slate-800 ${
             page <= 1 ? "pointer-events-none opacity-40" : "hover:bg-slate-800/40"
           }`}
         >
@@ -129,7 +131,7 @@ export function ProductosFilters({
         <button
           type="button"
           onClick={next}
-          className="rounded-lg px-3 py-2 text-sm font-semibold ring-1 ring-slate-800 hover:bg-slate-800/40"
+          className="hidden sm:block rounded-lg px-3.5 py-2 text-sm font-bold ring-1 ring-slate-800 hover:bg-slate-800/40"
         >
           →
         </button>

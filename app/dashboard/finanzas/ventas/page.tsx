@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { DateRangeBar } from "@/components/filters/DateRangeBar";
+import { getActiveSucursalId } from "@/lib/get-sucursal-id";
 import { VentasCompareLineChart } from "@/components/charts/VentasCompareLineChart";
 import { getVentasComparacion, getVentasYoY, getTopMetodosPago } from "@/lib/data/finanzas";
 import { InfoTip } from '@/components/info-tip';
@@ -64,8 +63,7 @@ export default async function VentasPage({
     searchParams: Promise<{ from?: string; to?: string; compare?: string }>;
 }) {
     headers();
-    const session = await getServerSession(authOptions);
-    const sucursalId = session?.user?.role === "admin" ? null : (session?.user?.id_sucursal ?? null);
+    const sucursalId = await getActiveSucursalId();
 
     const sp = await searchParams;
 
@@ -107,15 +105,15 @@ export default async function VentasPage({
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-200">
-            <main className="mx-auto max-w-7xl space-y-10 p-8">
+            <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8">
 
                 {/* SECCIÓN 1: ENCABEZADO Y FILTROS */}
-                <section className="flex flex-col gap-6 border-b border-slate-800 pb-8 lg:flex-row lg:items-center lg:justify-between">
+                <section className="flex flex-col gap-4 border-b border-slate-800 pb-5 pt-10 sm:pt-0 xl:flex-row xl:items-center xl:justify-between">
                     <div>
                         {/* Título principal con badge de color e InfoTip */}
                         <div className="flex items-center gap-2.5 mb-1">
-                            <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">
-                                Ventas <span className="text-emerald-500 text-xl not-italic ml-1">Comparativa</span>
+                            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase italic">
+                                Ventas <span className="text-emerald-500 text-lg sm:text-xl not-italic ml-1">Comparativa</span>
                             </h1>
                             <InfoTip text="En esta sección podés comparar el rendimiento comercial de tu negocio entre dos períodos de tiempo para detectar crecimiento o caídas estacionales." />
                         </div>
@@ -124,7 +122,7 @@ export default async function VentasPage({
                         </p>
                     </div>
 
-                    <div className="rounded-xl bg-slate-900/50 p-2 ring-1 ring-slate-800">
+                    <div className="shrink-0">
                         <DateRangeBar defaultFrom={defaultFrom} defaultTo={defaultTo} defaultCompare={compare} />
                     </div>
                 </section>
@@ -163,16 +161,16 @@ export default async function VentasPage({
 
 
                 {/* SECCIÓN 3: GRÁFICO CON INFOTIP EN TÍTULO */}
-                <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 shadow-2xl">
-                    <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 sm:p-8 shadow-2xl">
+                    <div className="mb-4 sm:mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <div className="flex items-center gap-2">
-                                <h3 className="text-lg font-bold text-white">Tendencia de Ventas</h3>
+                                <h3 className="text-base sm:text-lg font-bold text-white">Tendencia de Ventas</h3>
                                 <InfoTip text="Este gráfico superpone el rendimiento diario actual contra el período anterior para identificar en qué momentos del mes hubo desviaciones." />
                             </div>
-                            <p className="text-sm text-slate-500">Comparativa diaria: Actual vs {labelCompare}</p>
+                            <p className="text-xs sm:text-sm text-slate-500">Comparativa diaria: Actual vs {labelCompare}</p>
                         </div>
-                        <div className="flex gap-6">
+                        <div className="flex gap-4 sm:gap-6">
                             <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                                 <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                                 <span>Actual</span>
@@ -184,7 +182,7 @@ export default async function VentasPage({
                         </div>
                     </div>
 
-                    <div className="h-80 w-full">
+                    <div className="h-56 sm:h-80 w-full">
                         <VentasCompareLineChart
                             data={chartData}
                             labelActual="Actual"

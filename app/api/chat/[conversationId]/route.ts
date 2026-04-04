@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { createClient } from "@/lib/supabase/server";
 import { getSystemPrompt } from "@/lib/constans";
+import { getActiveSucursalId } from "@/lib/get-sucursal-id";
 
 const EMPRESA_ID = 3526;
 
@@ -17,7 +18,9 @@ export async function POST(
     const { messages } = await req.json();
 
     const session = await getServerSession(authOptions);
-    const sucursalId = session?.user?.role === "admin" ? null : (session?.user?.id_sucursal ?? null);
+    if (!session) return new Response("Unauthorized", { status: 401 });
+
+    const sucursalId = await getActiveSucursalId();
 
     const supabase = await createClient();
     const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY! });

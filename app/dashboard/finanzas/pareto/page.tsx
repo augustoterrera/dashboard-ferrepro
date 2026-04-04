@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getPareto80, getParetoComparacion, getParetoComparacionYoY } from "@/lib/data/finanzas";
+import { getActiveSucursalId } from "@/lib/get-sucursal-id";
 import type { Pareto80Response, ParetoComparacionResponse } from "@/types/pareto";
 import { ParetoView } from "./ui/ParetoView";
 import { ParetoFilterBar } from "@/components/filters/ParetoFilterBar";
@@ -26,8 +25,7 @@ export default async function Page({
 }) {
   const sp = await searchParams;
 
-  const session = await getServerSession(authOptions);
-  const sucursalId = session?.user?.role === "admin" ? null : (session?.user?.id_sucursal ?? null);
+  const sucursalId = await getActiveSucursalId();
 
   const defaultTo = todayISO();
   const defaultFrom = daysAgoISO(29);
@@ -69,20 +67,19 @@ export default async function Page({
 
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-8">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8">
       {/* HEADER CON TÍTULO Y FILTRO ALINEADOS */}
-      <header className="flex flex-col gap-4 border-b border-slate-800 pb-6 lg:flex-row lg:items-center lg:justify-between">
+      <header className="flex flex-col gap-4 border-b border-slate-800 pb-5 pt-10 sm:pt-0 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">
-            Pareto <span className="text-emerald-500 text-xl not-italic">80/20</span>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase italic">
+            Pareto <span className="text-emerald-500 text-lg sm:text-xl not-italic">80/20</span>
           </h1>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
             Optimización de Inventario y Ventas
           </p>
         </div>
 
-        {/* El filtro ahora solo ocupa el espacio necesario */}
-        <div className="shrink-0">
+        <div className="shrink-0 overflow-x-auto">
           <ParetoFilterBar defaultFrom={from} defaultTo={to} />
         </div>
       </header>

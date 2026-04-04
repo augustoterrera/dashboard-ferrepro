@@ -112,11 +112,14 @@ function SmallPill({
 
 /* ---------------- UI blocks ---------------- */
 
+const PAGE_SIZE = 10;
+
 function ParetoTable({ rows, total }: { rows: ParetoRow[]; total: number }) {
     const [sortConfig, setSortConfig] = useState<{
         key: 'valor' | 'unidades' | 'pct' | 'pct_acumulado';
         direction: 'asc' | 'desc';
     }>({ key: 'valor', direction: 'desc' });
+    const [page, setPage] = useState(0);
 
     const sortedRows = useMemo(() => {
         const sorted = [...rows].sort((a, b) => {
@@ -127,53 +130,123 @@ function ParetoTable({ rows, total }: { rows: ParetoRow[]; total: number }) {
         return sorted;
     }, [rows, sortConfig]);
 
+    const totalPages = Math.ceil(sortedRows.length / PAGE_SIZE);
+    const pageRows = sortedRows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
     const handleSort = (key: typeof sortConfig.key) => {
         setSortConfig(prev => ({
             key,
             direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc',
         }));
+        setPage(0);
     };
 
     const SortIcon = ({ columnKey }: { columnKey: typeof sortConfig.key }) => {
         if (sortConfig.key !== columnKey) {
             return <ChevronsUpDown size={12} className="text-slate-600" />;
         }
-        return sortConfig.direction === 'desc' 
+        return sortConfig.direction === 'desc'
             ? <ChevronDown size={12} className="text-blue-400" />
             : <ChevronUp size={12} className="text-blue-400" />;
     };
 
     return (
         <div className="flex flex-col rounded-xl border border-slate-700 bg-slate-800/40 overflow-hidden lg:h-125">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700 bg-slate-800/20">
+            {/* Header */}
+            <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-700 bg-slate-800/20">
                 <div className="flex items-center gap-2">
-                    <div className="text-sm font-bold uppercase tracking-widest text-slate-400">Ranking Pareto</div>
+                    <div className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-400">Ranking Pareto</div>
                     <InfoTip text="Productos ordenados por valor de venta descendente. Los productos en Clase A están resaltados en verde. Haz clic en los encabezados para ordenar." />
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-emerald-500/30 border-l-4 border-emerald-500 rounded-sm"></div>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 bg-emerald-500/30 border-l-4 border-emerald-500 rounded-sm"></div>
                         <span className="text-xs text-slate-500">Clase A</span>
                     </div>
                     <div className="text-xs text-slate-500 font-medium">
-                        {rows.length} productos
+                        {rows.length} prod.
                     </div>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-auto custom-scrollbar">
+            {/* ── CARD VIEW — mobile only ── */}
+            <div className="sm:hidden flex-1 overflow-auto divide-y divide-slate-700/40">
+                {pageRows.map((r, idx) => {
+                    const globalIdx = page * PAGE_SIZE + idx;
+                    const pctIndividual = total > 0 ? (r.valor || 0) / total : 0;
+                    return (
+                        <div
+                            key={`card-${r.sku ?? "null"}-${globalIdx}`}
+                            className={`px-4 py-4 transition-colors ${
+                                r.es_80
+                                    ? "border-l-2 border-l-emerald-500/60 bg-emerald-500/[0.03]"
+                                    : "border-l-2 border-l-transparent"
+                            }`}
+                        >
+                            {/* Top row: rank + name + Clase A badge */}
+                            <div className="flex items-start gap-3">
+                                <span className="mt-0.5 w-6 shrink-0 font-mono text-xs font-bold text-slate-500">
+                                    {globalIdx + 1}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                    <div
+                                        className="text-sm font-bold leading-snug text-slate-100"
+                                        title={r.nombre ?? "-"}
+                                    >
+                                        {r.nombre ?? "-"}
+                                    </div>
+                                    <div className="mt-1 font-mono text-[11px] text-slate-500">
+                                        {r.sku ?? "-"} · {new Intl.NumberFormat("es-AR").format(r.unidades || 0)} un.
+                                    </div>
+                                </div>
+                                {r.es_80 && (
+                                    <span className="mt-0.5 shrink-0 rounded-full border border-emerald-700 bg-emerald-600/15 px-2 py-0.5 text-[10px] font-black text-emerald-400">
+                                        A
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Bottom row: valor + % part + % acum */}
+                            <div className="mt-3 flex items-end justify-between gap-2 pl-9">
+                                <div>
+                                    <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Valor</div>
+                                    <div className="font-mono text-base font-bold text-white">
+                                        {money(r.valor || 0)}
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">% Part.</div>
+                                    <div className={`font-mono text-sm font-semibold ${
+                                        pctIndividual >= 0.05 ? "text-emerald-400" :
+                                        pctIndividual >= 0.02 ? "text-slate-300" : "text-slate-500"
+                                    }`}>
+                                        {pct(clamp01(pctIndividual))}
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">% Acum.</div>
+                                    <div className="flex items-center justify-end gap-1 font-mono text-sm font-semibold text-slate-300">
+                                        {pct(clamp01(r.pct_acumulado || 0))}
+                                        {r.es_80 && r.pct_acumulado && r.pct_acumulado >= 0.79 && r.pct_acumulado <= 0.81 && (
+                                            <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500 animate-pulse" />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* ── TABLE VIEW — sm+ only ── */}
+            <div className="hidden sm:block flex-1 overflow-auto custom-scrollbar">
                 <table className="w-full text-sm">
                     <thead className="sticky top-0 z-10 bg-[#1e293b] text-slate-400">
                         <tr className="text-[10px] font-black uppercase tracking-widest border-b border-slate-700">
-                            <th className="px-4 py-3 text-left w-10">#</th>
-                            <th className="px-4 py-3 text-left">
-                                <div className="flex items-center gap-1">
-                                    SKU
-                                    <InfoTip text="Código único del producto" />
-                                </div>
-                            </th>
+                            <th className="px-4 py-3 text-left w-8">#</th>
+                            <th className="hidden sm:table-cell px-4 py-3 text-left">SKU</th>
                             <th className="px-4 py-3 text-left">Producto</th>
-                            <th 
+                            <th
                                 className="px-4 py-3 text-right cursor-pointer hover:bg-slate-700/30 transition-colors"
                                 onClick={() => handleSort('unidades')}
                             >
@@ -182,7 +255,7 @@ function ParetoTable({ rows, total }: { rows: ParetoRow[]; total: number }) {
                                     <SortIcon columnKey="unidades" />
                                 </div>
                             </th>
-                            <th 
+                            <th
                                 className="px-4 py-3 text-right cursor-pointer hover:bg-slate-700/30 transition-colors"
                                 onClick={() => handleSort('valor')}
                             >
@@ -191,13 +264,9 @@ function ParetoTable({ rows, total }: { rows: ParetoRow[]; total: number }) {
                                     <SortIcon columnKey="valor" />
                                 </div>
                             </th>
-                            <th className="px-4 py-3 text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                    <span>Precio Prom.</span>
-                                </div>
-                            </th>
-                            <th 
-                                className="px-4 py-3 text-right cursor-pointer hover:bg-slate-700/30 transition-colors"
+                            <th className="hidden lg:table-cell px-4 py-3 text-right">Precio Prom.</th>
+                            <th
+                                className="hidden md:table-cell px-4 py-3 text-right cursor-pointer hover:bg-slate-700/30 transition-colors"
                                 onClick={() => handleSort('pct')}
                             >
                                 <div className="flex items-center justify-end gap-1">
@@ -205,69 +274,60 @@ function ParetoTable({ rows, total }: { rows: ParetoRow[]; total: number }) {
                                     <SortIcon columnKey="pct" />
                                 </div>
                             </th>
-                            <th 
+                            <th
                                 className="px-4 py-3 text-right cursor-pointer hover:bg-slate-700/30 transition-colors"
                                 onClick={() => handleSort('pct_acumulado')}
                             >
                                 <div className="flex items-center justify-end gap-1">
-                                    <span>% Acum.</span>
+                                    <span>% Ac.</span>
                                     <SortIcon columnKey="pct_acumulado" />
                                 </div>
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-700/50">
-                        {sortedRows.map((r, idx) => {
+                    <tbody className="divide-y divide-slate-700/40">
+                        {pageRows.map((r, idx) => {
+                            const globalIdx = page * PAGE_SIZE + idx;
                             const pctIndividual = total > 0 ? (r.valor || 0) / total : 0;
                             const precioPromedio = (r.unidades || 0) > 0 ? (r.valor || 0) / (r.unidades || 0) : 0;
-                            
                             return (
-                                <tr 
-                                    key={`${r.sku ?? "null"}-${idx}`} 
+                                <tr
+                                    key={`row-${r.sku ?? "null"}-${globalIdx}`}
                                     className={`group transition-colors text-slate-300 hover:bg-slate-700/20 ${
-                                        r.es_80 ? "bg-emerald-500/3 border-l-4 border-emerald-500/30" : ""
+                                        r.es_80 ? "bg-emerald-500/3 border-l-2 border-l-emerald-500/50" : ""
                                     }`}
                                 >
-                                    <td className="px-4 py-3 text-slate-600 font-mono text-xs">
-                                        {idx + 1}
-                                    </td>
-                                    <td className="px-4 py-3 text-slate-500 font-mono text-xs">
-                                        {r.sku ?? "-"}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div
-                                            className="max-w-60 truncate font-medium group-hover:text-white cursor-help"
-                                            title={r.nombre ?? "-"}
-                                        >
+                                    <td className="px-4 py-3 text-slate-500 font-mono text-xs w-8">{globalIdx + 1}</td>
+                                    <td className="px-4 py-3 text-slate-500 font-mono text-xs">{r.sku ?? "-"}</td>
+                                    <td className="px-4 py-3 min-w-0 max-w-0 w-full">
+                                        <div className="truncate text-sm font-semibold text-slate-200 group-hover:text-white cursor-help" title={r.nombre ?? "-"}>
                                             {r.nombre ?? "-"}
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 text-right font-mono text-slate-300">
+                                    <td className="px-4 py-3 text-right font-mono text-slate-300 text-sm">
                                         {new Intl.NumberFormat("es-AR").format(r.unidades || 0)}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-mono text-slate-200 font-semibold">
+                                    <td className="px-4 py-3 text-right font-mono text-slate-100 font-bold text-sm whitespace-nowrap">
                                         {money(r.valor || 0)}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-mono text-slate-400 text-xs">
+                                    <td className="hidden lg:table-cell px-4 py-3 text-right font-mono text-slate-400 text-xs">
                                         {money(precioPromedio)}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-mono">
+                                    <td className="hidden md:table-cell px-4 py-3 text-right font-mono text-sm">
                                         <span className={`${
                                             pctIndividual >= 0.05 ? "text-emerald-400 font-semibold" :
-                                            pctIndividual >= 0.02 ? "text-slate-300" :
-                                            "text-slate-500"
+                                            pctIndividual >= 0.02 ? "text-slate-300" : "text-slate-500"
                                         }`}>
                                             {pct(clamp01(pctIndividual))}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-right font-mono">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <span className="text-slate-400">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            <span className="text-slate-300 text-sm font-semibold">
                                                 {pct(clamp01(r.pct_acumulado || 0))}
                                             </span>
                                             {r.es_80 && r.pct_acumulado && r.pct_acumulado >= 0.79 && r.pct_acumulado <= 0.81 && (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" 
-                                                     title="Punto de corte del 80%"></div>
+                                                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                                             )}
                                         </div>
                                     </td>
@@ -278,24 +338,46 @@ function ParetoTable({ rows, total }: { rows: ParetoRow[]; total: number }) {
                 </table>
             </div>
 
-            {/* Resumen al pie */}
-            <div className="px-6 py-3 border-t border-slate-700 bg-slate-800/20 flex items-center justify-between">
-                <div className="flex items-center gap-6 text-xs">
+            {/* Footer: totales + paginación */}
+            <div className="px-3 sm:px-6 py-3 border-t border-slate-700 bg-slate-800/20 flex items-center justify-between gap-3 text-xs flex-wrap">
+                {/* Totales */}
+                <div className="flex items-center gap-4 text-xs">
                     <div>
-                        <span className="text-slate-500">Total Unidades: </span>
+                        <span className="text-slate-500">Valor total: </span>
+                        <span className="font-mono font-semibold text-slate-200">{money(total)}</span>
+                    </div>
+                    <div className="hidden sm:block">
+                        <span className="text-slate-500">Unidades: </span>
                         <span className="font-mono font-semibold text-slate-300">
                             {new Intl.NumberFormat("es-AR").format(
                                 rows.reduce((acc, r) => acc + (r.unidades || 0), 0)
                             )}
                         </span>
                     </div>
-                    <div>
-                        <span className="text-slate-500">Total Valor: </span>
-                        <span className="font-mono font-semibold text-slate-200">
-                            {money(total)}
-                        </span>
-                    </div>
                 </div>
+
+                {/* Paginación */}
+                {totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setPage(p => Math.max(0, p - 1))}
+                            disabled={page === 0}
+                            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-300 disabled:opacity-30 hover:bg-slate-800 hover:border-slate-600 transition-all active:scale-95"
+                        >
+                            ←
+                        </button>
+                        <span className="text-slate-400 font-mono text-xs tabular-nums">
+                            {page + 1} / {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                            disabled={page >= totalPages - 1}
+                            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-300 disabled:opacity-30 hover:bg-slate-800 hover:border-slate-600 transition-all active:scale-95"
+                        >
+                            →
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -447,19 +529,23 @@ export function ParetoView({
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 {/* Izquierda: Chart + Table */}
                 <div className="lg:col-span-2 space-y-6 min-w-0">
-                    <div className="rounded-2xl border border-slate-700 bg-slate-800/40 p-6 shadow-xl">
-                        <div className="flex items-center gap-2 mb-6">
-                            <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-                                Pareto por producto (Valor + % acumulado)
+                    <div className="rounded-2xl border border-slate-700 bg-slate-800/40 p-4 sm:p-6 shadow-xl">
+                        <div className="flex items-center gap-2 mb-3">
+                            <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 truncate">
+                                <span className="sm:hidden">Pareto (Valor + % acum.)</span>
+                                <span className="hidden sm:inline">Pareto por producto (Valor + % acumulado)</span>
                             </h3>
                             <InfoTip text="Gráfico combinado: las barras muestran el valor de venta por producto, la línea muestra el porcentaje acumulado. La línea roja marca el umbral del 80%." />
                         </div>
-                        <div className="h-100">
+                        {/* Scrollable horizontally on mobile so bars have space */}
+                        <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                          <div className="h-72 sm:h-100 min-w-130 sm:min-w-0">
                             <ParetoComboChart
                                 data={chartData}
                                 umbralPct={umbralPct}
                                 title=""
                             />
+                          </div>
                         </div>
                     </div>
 

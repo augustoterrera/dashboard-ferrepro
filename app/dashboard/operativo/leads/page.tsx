@@ -101,13 +101,13 @@ export default async function LeadsPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-1000">
-      <header className="flex flex-col gap-2">
+      <header className="flex flex-col gap-2 pt-10 sm:pt-0">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-500/20">
             <Phone className="text-blue-500" size={24} />
           </div>
           <div>
-            <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-white uppercase italic">
               Leads <span className="text-blue-500 not-italic">WhatsApp</span>
             </h1>
             <p className="text-sm text-slate-500 font-medium">

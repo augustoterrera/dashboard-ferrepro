@@ -79,9 +79,135 @@ export function CrmTable({ rows }: { rows: Row[] }) {
     return "bg-slate-800/50 border-slate-700 text-slate-500";
   };
 
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden shadow-2xl backdrop-blur-sm">
+        <div className="px-6 py-20 text-center flex flex-col items-center justify-center gap-2">
+          <div className="p-4 bg-slate-800/50 rounded-full">
+            <ShoppingCart size={32} className="text-slate-600" />
+          </div>
+          <p className="text-slate-500 font-medium">No se encontraron registros en esta base.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden shadow-2xl backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="overflow-x-auto">
+
+      {/* ── CARD VIEW — mobile only ── */}
+      <div className="sm:hidden divide-y divide-slate-800/60">
+        {rows.map((r) => {
+          const isUpdating = loadingId === r.phone_number && pending;
+          const optimisticState = optimisticStates.get(r.phone_number || '');
+          const displayRow = optimisticState ? { ...r, ...optimisticState } : r;
+
+          return (
+            <div
+              key={r.conversation_id}
+              className={cn("px-4 py-4 transition-all duration-300", isUpdating && "opacity-60")}
+            >
+              {/* Top row: dot + name + copy */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  {isUpdating ? (
+                    <Loader2 size={14} className="shrink-0 animate-spin text-blue-500" />
+                  ) : (
+                    <div className={cn(
+                      "w-2 h-2 shrink-0 rounded-full transition-all duration-500",
+                      displayRow.venta
+                        ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse"
+                        : "bg-slate-700"
+                    )} />
+                  )}
+                  <Link
+                    href={`https://app2.waichatt.com/app/accounts/6/conversations/${r.conversation_display_id}`}
+                    target="_blank"
+                    className="font-bold text-white text-sm leading-snug truncate flex items-center gap-1"
+                  >
+                    {r.contact_name ?? 'Sin nombre'}
+                    <ExternalLink size={10} className="shrink-0 text-slate-500" />
+                  </Link>
+                </div>
+                <button
+                  onClick={() => copyPhone(r.conversation_id, r.phone_number)}
+                  disabled={!r.phone_number || isUpdating}
+                  className="shrink-0 p-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all"
+                >
+                  {copiedId === r.conversation_id ? (
+                    <Check size={13} className="text-emerald-500" />
+                  ) : (
+                    <Copy size={13} />
+                  )}
+                </button>
+              </div>
+
+              {/* Phone */}
+              <div className="mt-2 font-mono text-xs bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50 text-slate-300 inline-block">
+                {r.phone_number ?? '-'}
+              </div>
+
+              {/* Labels */}
+              {r.conversation_labels && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {r.conversation_labels.split(' · ').map((label, i) => (
+                    <span
+                      key={i}
+                      className={cn(
+                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter border",
+                        getLabelStyles(label)
+                      )}
+                    >
+                      {label.replace('_', ' ')}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Toggles */}
+              <div className="mt-3 flex items-center gap-5">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Llamada</span>
+                  <div className="relative inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={!!displayRow.llamada_por_tel}
+                      disabled={isUpdating}
+                      onChange={(e) => onToggle(r, { llamada_por_tel: e.target.checked })}
+                    />
+                    <div className={cn(
+                      "w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:after:bg-white transition-all duration-300",
+                      isUpdating && "opacity-50"
+                    )} />
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Venta</span>
+                  <div className="relative inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={!!displayRow.venta}
+                      disabled={isUpdating}
+                      onChange={(e) => onToggle(r, { venta: e.target.checked })}
+                    />
+                    <div className={cn(
+                      "w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white transition-all duration-300",
+                      displayRow.venta && "shadow-[0_0_10px_rgba(16,185,129,0.5)]",
+                      isUpdating && "opacity-50"
+                    )} />
+                  </div>
+                </label>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── TABLE VIEW — sm+ only ── */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="bg-slate-800/50 text-slate-400 border-b border-slate-800">
@@ -97,8 +223,6 @@ export function CrmTable({ rows }: { rows: Row[] }) {
           <tbody className="divide-y divide-slate-800/50 text-slate-200">
             {rows.map((r) => {
               const isUpdating = loadingId === r.phone_number && pending;
-
-              // Aplicamos el estado optimista si existe
               const optimisticState = optimisticStates.get(r.phone_number || '');
               const displayRow = optimisticState ? { ...r, ...optimisticState } : r;
 
@@ -106,11 +230,10 @@ export function CrmTable({ rows }: { rows: Row[] }) {
                 <tr
                   key={r.conversation_id}
                   className={cn(
-                    "hover:bg-blue-500/[0.02] transition-all duration-300 group",
+                    "hover:bg-blue-500/2 transition-all duration-300 group",
                     isUpdating && "opacity-60"
                   )}
                 >
-                  {/* Nombre + Link + Loading Indicator */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="relative flex items-center justify-center">
@@ -125,7 +248,6 @@ export function CrmTable({ rows }: { rows: Row[] }) {
                           )} />
                         )}
                       </div>
-
                       <Link
                         href={`https://app2.waichatt.com/app/accounts/6/conversations/${r.conversation_display_id}`}
                         target="_blank"
@@ -139,14 +261,12 @@ export function CrmTable({ rows }: { rows: Row[] }) {
                     </div>
                   </td>
 
-                  {/* Teléfono */}
                   <td className="px-6 py-4">
                     <span className="font-mono text-xs bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50 text-slate-300">
                       {r.phone_number ?? '-'}
                     </span>
                   </td>
 
-                  {/* Etiquetas con Colores Dinámicos */}
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
                       {r.conversation_labels?.split(' · ').map((label, i) => (
@@ -163,7 +283,6 @@ export function CrmTable({ rows }: { rows: Row[] }) {
                     </div>
                   </td>
 
-                  {/* Toggle Llamada (Blue) */}
                   <td className="px-6 py-4 text-center">
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -174,13 +293,12 @@ export function CrmTable({ rows }: { rows: Row[] }) {
                         onChange={(e) => onToggle(r, { llamada_por_tel: e.target.checked })}
                       />
                       <div className={cn(
-                        "w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:after:bg-white transition-all duration-300",
+                        "w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:after:bg-white transition-all duration-300",
                         isUpdating && "opacity-50"
                       )} />
                     </label>
                   </td>
 
-                  {/* Toggle Venta (Emerald) con efecto especial */}
                   <td className="px-6 py-4 text-center">
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -191,14 +309,13 @@ export function CrmTable({ rows }: { rows: Row[] }) {
                         onChange={(e) => onToggle(r, { venta: e.target.checked })}
                       />
                       <div className={cn(
-                        "w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white transition-all duration-300",
+                        "w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white transition-all duration-300",
                         displayRow.venta && "shadow-[0_0_12px_rgba(16,185,129,0.5)]",
                         isUpdating && "opacity-50"
                       )} />
                     </label>
                   </td>
 
-                  {/* Acción Copiar */}
                   <td className="px-4 py-4 text-right">
                     <button
                       onClick={() => copyPhone(r.conversation_id, r.phone_number)}
@@ -217,15 +334,6 @@ export function CrmTable({ rows }: { rows: Row[] }) {
             })}
           </tbody>
         </table>
-
-        {rows.length === 0 && (
-          <div className="px-6 py-20 text-center flex flex-col items-center justify-center gap-2">
-            <div className="p-4 bg-slate-800/50 rounded-full">
-              <ShoppingCart size={32} className="text-slate-600" />
-            </div>
-            <p className="text-slate-500 font-medium">No se encontraron registros en esta base.</p>
-          </div>
-        )}
       </div>
 
       <div className="px-6 py-4 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between">

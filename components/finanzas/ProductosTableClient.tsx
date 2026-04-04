@@ -72,17 +72,16 @@ export function ProductosTableClient({
     }, [page, params]);
 
     return (
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white">
-                    {tab === "unidades" ? "Top productos por unidades" : "Top productos por facturación"}
+        <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-3 sm:p-6 shadow-2xl">
+            <div className="mb-3 sm:mb-4 flex items-center justify-between">
+                <h3 className="text-sm sm:text-lg font-bold text-white">
+                    {tab === "unidades" ? "Top por unidades" : "Top por facturación"}
                 </h3>
                 <div className="text-xs text-slate-500">
-                    Página {page} {isPending ? "• cargando..." : ""}
+                    Pág. {page} {isPending ? "• cargando..." : ""}
                 </div>
             </div>
 
-            {/* ✅ CAMBIO: wrapper relative + overlay */}
             <div className="relative">
                 {isPending && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-slate-950/40 backdrop-blur-sm">
@@ -93,50 +92,83 @@ export function ProductosTableClient({
                     </div>
                 )}
 
-                <div className="overflow-hidden">
-                    <table className="w-full text-sm">
-                        <thead className="sticky top-0 bg-slate-900/90 backdrop-blur border-b border-slate-800">
-                            <tr className="text-slate-500">
-                                <th className="p-2 text-left font-semibold">Producto</th>
-                                <th className="p-2 text-right font-semibold">Unidades</th>
-                                <th className="p-2 text-right font-semibold">
-                                    {tab === "unidades" ? "Valor" : "Facturación"}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                            {rows.map((r: any) => (
-                                <tr key={r.sku} className="hover:bg-slate-800/30">
-                                    <td className="p-2">
-                                        <div className="font-semibold text-slate-100">{r.nombre}</div>
-                                        <div className="text-xs text-slate-500">SKU: {r.sku}</div>
-                                    </td>
-                                    <td className="p-2 text-right">
-                                        {Number(r.unidades ?? 0).toLocaleString("es-AR")}
-                                    </td>
-                                    <td className="p-2 text-right font-mono text-slate-100">
-                                        {money(Number(r.facturacion ?? r.valor ?? 0))}
-                                    </td>
-                                </tr>
-                            ))}
-                            {rows.length === 0 && (
-                                <tr>
-                                    <td colSpan={3} className="p-6 text-center text-slate-400">
-                                        Sin resultados.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                {rows.length === 0 && !isPending ? (
+                    <div className="py-10 text-center text-slate-400 text-sm">Sin resultados.</div>
+                ) : (
+                    <>
+                        {/* ── CARD VIEW — mobile only ── */}
+                        <div className="sm:hidden divide-y divide-slate-800/60">
+                            {rows.map((r: any, idx: number) => {
+                                const valor = Number(r.facturacion ?? r.valor ?? 0);
+                                const unidades = Number(r.unidades ?? 0);
+                                const rank = (page - 1) * limit + idx + 1;
+                                return (
+                                    <div key={r.sku} className="px-1 py-4">
+                                        <div className="flex items-start gap-3">
+                                            <span className="mt-0.5 w-6 shrink-0 font-mono text-xs font-bold text-slate-500">
+                                                {rank}
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="text-sm font-bold leading-snug text-slate-100">
+                                                    {r.nombre}
+                                                </div>
+                                                <div className="mt-1 font-mono text-[11px] text-slate-500">
+                                                    {r.sku} · {unidades.toLocaleString("es-AR")} un.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 pl-9">
+                                            <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                                                {tab === "unidades" ? "Valor" : "Facturación"}
+                                            </div>
+                                            <div className="font-mono text-base font-bold text-white">
+                                                {money(valor)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* ── TABLE VIEW — sm+ only ── */}
+                        <div className="hidden sm:block overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead className="sticky top-0 bg-slate-900/90 backdrop-blur border-b border-slate-800">
+                                    <tr className="text-slate-500">
+                                        <th className="p-2 text-left font-semibold">Producto</th>
+                                        <th className="p-2 text-right font-semibold">Unidades</th>
+                                        <th className="p-2 text-right font-semibold">
+                                            {tab === "unidades" ? "Valor" : "Facturación"}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                                    {rows.map((r: any) => (
+                                        <tr key={r.sku} className="hover:bg-slate-800/30">
+                                            <td className="p-2 min-w-0 max-w-0 w-full">
+                                                <div className="truncate font-semibold text-slate-100">{r.nombre}</div>
+                                                <div className="text-xs text-slate-500">SKU: {r.sku}</div>
+                                            </td>
+                                            <td className="p-2 text-right">
+                                                {Number(r.unidades ?? 0).toLocaleString("es-AR")}
+                                            </td>
+                                            <td className="p-2 text-right font-mono text-slate-100 whitespace-nowrap">
+                                                {money(Number(r.facturacion ?? r.valor ?? 0))}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
+                )}
             </div>
 
             <div className="mt-4 flex items-center justify-between">
                 <button
                     disabled={page <= 1 || isPending}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    className={`rounded-lg px-3 py-2 text-sm font-semibold ring-1 ring-slate-800 ${page <= 1 ? "opacity-40" : "hover:bg-slate-800/40"
-                        }`}
+                    className={`rounded-lg px-4 py-2.5 text-sm font-semibold ring-1 ring-slate-800 ${page <= 1 ? "opacity-40" : "hover:bg-slate-800/40"}`}
                 >
                     ← Anterior
                 </button>
@@ -144,12 +176,11 @@ export function ProductosTableClient({
                 <button
                     disabled={isPending}
                     onClick={() => setPage((p) => p + 1)}
-                    className="rounded-lg px-3 py-2 text-sm font-semibold ring-1 ring-slate-800 hover:bg-slate-800/40"
+                    className="rounded-lg px-4 py-2.5 text-sm font-semibold ring-1 ring-slate-800 hover:bg-slate-800/40"
                 >
                     Siguiente →
                 </button>
             </div>
         </section>
-
     );
 }

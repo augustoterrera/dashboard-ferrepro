@@ -72,10 +72,10 @@ export function DateRangeBar(props: {
     const apply = () => push(from, to, compare);
 
     return (
-        <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 bg-slate-900/60 p-2 rounded-xl border border-slate-800 shadow-xl backdrop-blur-md">
+        <div className="flex flex-col gap-2 bg-slate-900/60 p-2 rounded-xl border border-slate-800 shadow-xl backdrop-blur-md sm:flex-row sm:flex-wrap sm:items-center lg:flex-nowrap lg:gap-3">
 
-            {/* Quick ranges: Intermedio entre botones y texto */}
-            <div className="flex items-center gap-1.5 px-3 border-r border-slate-800/50">
+            {/* Fila 1: Quick ranges + selector comparación */}
+            <div className="flex items-center gap-1.5 sm:px-3 sm:border-r sm:border-slate-800/50">
                 {[7, 30, 90].map((d) => (
                     <button
                         key={d}
@@ -88,22 +88,36 @@ export function DateRangeBar(props: {
                             setFrom(nF); setTo(nT);
                             push(nF, nT, compare);
                         }}
-                        className="text-[10px] font-black uppercase text-slate-400 hover:text-white px-2 py-1.5 rounded-md hover:bg-slate-800 transition-all disabled:opacity-30"
+                        className="text-[10px] font-black uppercase text-slate-400 hover:text-white px-2.5 py-2 rounded-md hover:bg-slate-800 transition-all disabled:opacity-30"
                     >
                         {d}D
                     </button>
                 ))}
+
+                {/* Selector de comparación junto a los quick ranges en mobile */}
+                <div className="relative ml-auto sm:hidden">
+                    <select
+                        value={compare}
+                        onChange={(e) => setCompare(e.target.value as CompareMode)}
+                        disabled={busy}
+                        className="bg-slate-950 border border-slate-800 rounded-lg pl-3 pr-7 py-2 text-[11px] font-bold text-slate-300 outline-none hover:border-slate-600 transition-colors appearance-none cursor-pointer"
+                    >
+                        <option value="prev">vs Anterior</option>
+                        <option value="yoy">vs Año Pasado</option>
+                    </select>
+                    <ChevronRight size={12} className="absolute right-2 top-1/2 -translate-y-1/2 rotate-90 text-slate-500 pointer-events-none" />
+                </div>
             </div>
 
-            {/* Rango de Fechas equilibrado */}
-            <div className="flex items-center gap-2 px-2 border-r border-slate-800/50">
+            {/* Fila 2 (mobile) / inline (desktop): Fechas + comparación + aplicar */}
+            <div className="flex items-center gap-2 sm:px-2 sm:border-r sm:border-slate-800/50">
                 <DateButton label="Desde" value={from} busy={busy} onSelect={setFrom} />
-                <ChevronRight size={14} className="text-slate-700" />
+                <ChevronRight size={14} className="text-slate-700 shrink-0" />
                 <DateButton label="Hasta" value={to} busy={busy} onSelect={setTo} />
             </div>
 
-            {/* Selector de Comparación equilibrado */}
-            <div className="flex items-center px-3 gap-3">
+            {/* Selector de Comparación — solo visible en sm+ */}
+            <div className="hidden sm:flex items-center px-3 gap-3 border-r border-slate-800/50">
                 <div className="relative">
                     <select
                         value={compare}
@@ -116,16 +130,16 @@ export function DateRangeBar(props: {
                     </select>
                     <ChevronRight size={12} className="absolute right-2 top-1/2 -translate-y-1/2 rotate-90 text-slate-500 pointer-events-none" />
                 </div>
-
-                <button
-                    onClick={apply}
-                    disabled={busy}
-                    className="relative flex items-center justify-center min-w-27.5 h-9 gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 text-white px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg"
-                >
-                    {busy ? <RefreshCcw size={14} className="animate-spin" /> : <ArrowRight size={14} />}
-                    <span>{busy ? "..." : "Aplicar"}</span>
-                </button>
             </div>
+
+            <button
+                onClick={apply}
+                disabled={busy}
+                className="relative flex items-center justify-center w-full sm:w-auto sm:min-w-27.5 h-10 sm:h-9 gap-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 text-white px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg"
+            >
+                {busy ? <RefreshCcw size={14} className="animate-spin" /> : <ArrowRight size={14} />}
+                <span>{busy ? "..." : "Aplicar"}</span>
+            </button>
 
             {/* FIX CALENDARIO: Letras claras y fondo oscuro */}
             <style jsx global>{`

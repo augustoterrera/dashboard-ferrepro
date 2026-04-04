@@ -72,7 +72,7 @@ export function CampaignDashboard({
 
       {rows.length === 0 ? (
         <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 text-slate-300">
-          Sin campañas para este rango (probá bajar “Min Conv”).
+          Sin campañas para este rango (probá bajar "Min Conv").
         </div>
       ) : (
         <>
@@ -102,9 +102,9 @@ export function CampaignDashboard({
             );
           })()}
 
-          {/* Tabla */}
+          {/* Tabla / Cards */}
           <div className="rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+            <div className="flex items-center justify-between border-b border-slate-800 px-4 sm:px-5 py-4">
               <div>
                 <h2 className="text-sm font-black uppercase tracking-widest text-white">Ranking de campañas</h2>
                 <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
@@ -114,7 +114,46 @@ export function CampaignDashboard({
               <InfoTip text="Campaña = estrategia general. Para decisiones de segmentación real, mirá AdSets." />
             </div>
 
-            <div className="overflow-x-auto">
+            {/* ── CARD VIEW — mobile only ── */}
+            <div className="sm:hidden divide-y divide-slate-800/60">
+              {rows.map((r) => (
+                <div key={r.id} className="px-4 py-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-bold text-slate-100 leading-snug truncate" title={r.name}>
+                        {r.name}
+                      </div>
+                      <div className="mt-1 text-[11px] font-mono text-slate-500">
+                        Imp {num0(r.impressions)} · Clicks {num0(r.clicks)}
+                      </div>
+                    </div>
+                    <RecoBadge v={r.accion_recomendada} />
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <div>
+                      <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Spend</div>
+                      <div className="font-mono text-sm font-bold text-white">{money0(r.spend)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Conv</div>
+                      <div className="font-mono text-sm font-bold text-white">{num0(r.conversations_started)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">CAC</div>
+                      <div className="font-mono text-sm font-bold text-white">{r.cac == null ? "—" : money2(r.cac)}</div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex gap-4 text-[11px] font-mono text-slate-500">
+                    <span>CTR {r.ctr == null ? "—" : `${num2(r.ctr)}%`}</span>
+                    <span>CPM {r.cpm == null ? "—" : money2(r.cpm)}</span>
+                    <span>Freq {r.frequency == null ? "—" : num2(r.frequency)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── TABLE VIEW — sm+ only ── */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="min-w-full text-left text-xs">
                 <thead className="bg-slate-900/40 text-slate-400">
                   <tr>
@@ -128,31 +167,19 @@ export function CampaignDashboard({
                     <th className="px-5 py-3 text-right">Freq</th>
                   </tr>
                 </thead>
-
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.id} className="border-t border-slate-800/60 hover:bg-slate-900/30 transition-colors">
                       <td className="px-5 py-3">
-                        <div className="max-w-105 truncate font-black text-slate-200" title={r.name}>
-                          {r.name}
-                        </div>
+                        <div className="max-w-xs truncate font-black text-slate-200" title={r.name}>{r.name}</div>
                         <div className="mt-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
                           <span>Imp {num0(r.impressions)}</span>
                           <span>·</span>
                           <span>Clicks {num0(r.clicks)}</span>
-                          {r.motivo ? (
-                            <>
-                              <span>·</span>
-                              <InfoTip text={r.motivo} />
-                            </>
-                          ) : null}
+                          {r.motivo ? <><span>·</span><InfoTip text={r.motivo} /></> : null}
                         </div>
                       </td>
-
-                      <td className="px-5 py-3 text-center">
-                        <RecoBadge v={r.accion_recomendada} />
-                      </td>
-
+                      <td className="px-5 py-3 text-center"><RecoBadge v={r.accion_recomendada} /></td>
                       <td className="px-5 py-3 text-right font-mono text-slate-200">{money0(r.spend)}</td>
                       <td className="px-5 py-3 text-right font-mono text-slate-200">{num0(r.conversations_started)}</td>
                       <td className="px-5 py-3 text-right font-mono text-slate-200">{r.cac == null ? "—" : money2(r.cac)}</td>
@@ -165,8 +192,8 @@ export function CampaignDashboard({
               </table>
             </div>
 
-            <div className="border-t border-slate-800 px-5 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
-              Tip: si muchas campañas están en “REVISAR_ARTE”, rotá creativos o subí el CTR Min.
+            <div className="border-t border-slate-800 px-4 sm:px-5 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+              Tip: si muchas campañas están en "REVISAR_ARTE", rotá creativos o subí el CTR Min.
             </div>
           </div>
         </>

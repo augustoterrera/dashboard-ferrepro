@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { DateRangeBar } from "@/components/filters/DateRangeBar";
+import { getActiveSucursalId } from "@/lib/get-sucursal-id";
 import { getProductosPorFacturacion, getProductosPorUnidades, getProductosKpis } from "@/lib/data/finanzas";
 import { ProductosFilters } from "@/components/finanzas/ProductosFilters";
 import { ProductosTableClient } from "@/components/finanzas/ProductosTableClient";
@@ -56,8 +55,7 @@ export default async function ProductosPage({
     searchParams: Promise<{ from?: string; to?: string; tab?: string; q?: string; page?: string }>;
 }) {
     headers();
-    const session = await getServerSession(authOptions);
-    const sucursalId = session?.user?.role === "admin" ? null : (session?.user?.id_sucursal ?? null);
+    const sucursalId = await getActiveSucursalId();
 
     const sp = await searchParams;
 
@@ -88,18 +86,18 @@ export default async function ProductosPage({
     const topUni = kpisData?.top?.por_unidades ?? null;
 
     return (
-        <main className="mx-auto max-w-7xl space-y-6 p-8 text-slate-200">
-            <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-6">
+        <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8 text-slate-200">
+            <header className="flex flex-col gap-3 border-b border-slate-800 pb-5 pt-10 sm:pt-0 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tight text-white uppercase italic">
-                        Productos <span className="text-blue-500 text-xl not-italic">Catálogo</span>
+                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase italic">
+                        Productos <span className="text-blue-500 text-lg sm:text-xl not-italic">Catálogo</span>
                     </h1>
                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
                         Análisis de rendimiento por artículo
                     </p>
                 </div>
 
-                <div className="rounded-xl bg-slate-900/50 p-2 ring-1 ring-slate-800">
+                <div className="rounded-xl bg-slate-900/50 p-2 ring-1 ring-slate-800 overflow-x-auto">
                     <DateRangeBar defaultFrom={defaultFrom} defaultTo={defaultTo} />
                 </div>
             </header>

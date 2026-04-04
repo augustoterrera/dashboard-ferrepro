@@ -1,8 +1,10 @@
+'use client';
+
 import { HelpCircle } from "lucide-react";
 
 export function InfoTip({ text }: { text: string }) {
   return (
-    <div className="group relative inline-block">
+    <div className="group relative hidden sm:inline-block">
       <HelpCircle 
         size={12} 
         className="text-slate-600 cursor-help transition-colors group-hover:text-slate-400" 

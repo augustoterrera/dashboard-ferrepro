@@ -204,34 +204,52 @@ export function ParetoFilterBar(props: {
     padding: 6px 10px !important;
   }
 `}</style>
-    <div className="flex flex-wrap items-center gap-4 rounded-xl border border-slate-700/50 bg-slate-900/40 p-2 pl-4 shadow-2xl backdrop-blur-md">
-      {/* Quick ranges */}
-      <div className="flex items-center gap-1 border-r border-slate-700/50 pr-4">
-        <span className="mr-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+    <div className="flex flex-col gap-2 rounded-xl border border-slate-700/50 bg-slate-900/40 p-2 shadow-2xl backdrop-blur-md sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 sm:pl-4 lg:flex-nowrap">
+
+      {/* Fila 1 mobile: quick ranges + compare selector */}
+      <div className="flex items-center gap-1 sm:border-r sm:border-slate-700/50 sm:pr-4">
+        <span className="mr-1 text-[10px] font-black uppercase tracking-widest text-slate-500 hidden sm:inline">
           Filtros
         </span>
         {[7, 30, 90].map((d) => (
           <button
             key={d}
-            className="rounded-md px-2.5 py-1.5 text-xs font-bold text-slate-400 transition-all hover:bg-slate-800 hover:text-white active:scale-95"
+            className="rounded-md px-2.5 py-2 sm:py-1.5 text-xs font-bold text-slate-400 transition-all hover:bg-slate-800 hover:text-white active:scale-95"
             onClick={() => setDays(d)}
             type="button"
           >
             {d}d
           </button>
         ))}
+
+        {/* Compare — solo en mobile inline aquí */}
+        <div className="relative ml-auto sm:hidden">
+          <select
+            value={compare}
+            onChange={(e) => setCompare(e.target.value as CompareMode)}
+            className="appearance-none rounded-lg border border-slate-700 bg-slate-950 pl-3 pr-7 py-2 text-xs font-bold text-slate-300 outline-none transition-all focus:border-blue-500"
+          >
+            <option value="prev">vs Anterior</option>
+            <option value="yoy">vs Año pasado</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-slate-500">
+            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
-        {/* Dates */}
+      {/* Fila 2 mobile / inline desktop: fechas + compare (sm+) + aplicar */}
+      <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2">
           <DateButton label="Desde" value={from} onSelect={setFrom} />
-          <ChevronRight size={14} className="text-slate-700" />
+          <ChevronRight size={14} className="text-slate-700 shrink-0" />
           <DateButton label="Hasta" value={to} onSelect={setTo} />
         </div>
 
-        {/* Compare */}
-        <div className="relative group">
+        {/* Compare — solo en sm+ */}
+        <div className="relative hidden sm:block">
           <select
             value={compare}
             onChange={(e) => setCompare(e.target.value as CompareMode)}
@@ -250,19 +268,13 @@ export function ParetoFilterBar(props: {
           </div>
         </div>
 
-        {/* Apply */}
         <button
           onClick={apply}
-          className="group relative flex items-center gap-2 overflow-hidden rounded-lg bg-blue-600 px-5 py-2 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:bg-blue-500 active:scale-95 shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+          className="w-full sm:w-auto group relative flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-blue-600 px-4 sm:px-5 py-2 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:bg-blue-500 active:scale-95 shadow-[0_0_15px_rgba(37,99,235,0.3)]"
           type="button"
         >
           <span className="relative z-10">Aplicar</span>
-          <svg
-            className="relative z-10 h-3 w-3 transition-transform group-hover:translate-x-1"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg className="relative z-10 h-3 w-3 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7l5 5m0 0l-5 5m5-5H6" />
           </svg>
         </button>
