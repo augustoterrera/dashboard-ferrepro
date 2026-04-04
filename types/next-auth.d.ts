@@ -12,6 +12,9 @@ declare module "next-auth" {
       id: string;
       role: string;
       id_sucursal: number | null;
-    } & DefaultSession["user"];
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
   }
 }
