@@ -35,7 +35,7 @@ export default function PageConversations() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+    <div className="h-full flex flex-col bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-2xl">
       {/* Header */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-800 shrink-0">
         <div className="h-9 w-9 rounded-lg bg-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.4)]">

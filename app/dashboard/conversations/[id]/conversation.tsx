@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { Button } from "@/components/ui/button";
-import { Send, Bot, ChevronDown } from "lucide-react";
+import { Send, Bot, ChevronDown, ChevronLeft } from "lucide-react";
 import { MessageBubble } from "@/components/chat/bubbleMessage";
 import { DashboardModal } from "@/components/chat/dashboardModal";
 import type { DBMessage } from "@/types/chat";
@@ -260,7 +260,14 @@ export default function ChatPage({
         <>
             <div className="h-full flex flex-col bg-slate-900 rounded-xl border border-slate-800 overflow-hidden relative">
                 {/* Header */}
-                <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-800 bg-slate-900/80 shrink-0">
+                <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-slate-800 bg-slate-900/80 shrink-0">
+                    {/* Back button — mobile only */}
+                    <button
+                        onClick={() => router.push("/dashboard/conversations")}
+                        className="sm:hidden h-8 w-8 flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors shrink-0"
+                    >
+                        <ChevronLeft className="h-5 w-5" />
+                    </button>
                     <div className="h-9 w-9 rounded-lg bg-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.4)] shrink-0">
                         <Bot className="h-5 w-5 text-white" />
                     </div>

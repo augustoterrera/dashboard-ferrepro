@@ -46,6 +46,7 @@ db.md
 
 
 .claude/
-requests.http
 .claude/settings.local.json
 
+*.http
+*.sql
