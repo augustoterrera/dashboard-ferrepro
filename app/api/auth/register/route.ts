@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const { getToken } = require("next-auth/jwt") as { getToken: (params: { req: NextRequest }) => Promise<Record<string, any> | null> };
 import { createClient } from "@/lib/supabase/server";
 import bcrypt from "bcryptjs";
 
