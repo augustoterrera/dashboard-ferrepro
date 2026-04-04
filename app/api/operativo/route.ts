@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { getToken } from "@/lib/get-token";
 
 export async function GET(req: NextRequest) {
   const token = await getToken({ req });

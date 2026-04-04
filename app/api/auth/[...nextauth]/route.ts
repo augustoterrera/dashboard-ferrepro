@@ -1,6 +1,4 @@
 import NextAuth from "next-auth";
-import type { Session } from "next-auth";
-import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { createClient } from "@/lib/supabase/server";
 import bcrypt from "bcryptjs";
@@ -45,7 +43,8 @@ export const authOptions = {
     error: "/auth/error",
   },
   callbacks: {
-    jwt({ token, user }: { token: JWT; user: any }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    jwt({ token, user }: { token: any; user: any }) {
       if (user) {
         token.id = user.id;
         token.role = (user as unknown as { role: string }).role;
@@ -53,7 +52,8 @@ export const authOptions = {
       }
       return token;
     },
-    session({ session, token }: { session: Session; token: JWT }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    session({ session, token }: { session: any; token: any }) {
       if (session.user) {
         session.user.id = token.id;
         session.user.role = token.role;

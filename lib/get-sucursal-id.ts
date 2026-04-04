@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getSession } from "@/lib/get-session";
 
 /**
  * Devuelve el id de sucursal activo según el rol del usuario:
@@ -10,7 +9,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
  * - cualquier otro: null
  */
 export async function getActiveSucursalId(): Promise<number | null> {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
   if (!session?.user) return null;
 
   const { role, id_sucursal } = session.user as {

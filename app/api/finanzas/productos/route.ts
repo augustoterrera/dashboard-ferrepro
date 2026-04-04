@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { getToken } from "@/lib/get-token";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveSucursalId } from "@/lib/get-sucursal-id";
 

@@ -1,8 +1,7 @@
 import { streamText, tool, convertToModelMessages, zodSchema, stepCountIs } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getSession } from "@/lib/get-session";
 import { createClient } from "@/lib/supabase/server";
 import { getSystemPrompt } from "@/lib/constans";
 import { getActiveSucursalId } from "@/lib/get-sucursal-id";
@@ -17,7 +16,7 @@ export async function POST(
     console.log("[chat/route] POST conversationId:", conversationId);
     const { messages } = await req.json();
 
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     if (!session) return new Response("Unauthorized", { status: 401 });
 
     const sucursalId = await getActiveSucursalId();

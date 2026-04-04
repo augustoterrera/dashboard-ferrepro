@@ -1,12 +1,22 @@
-import { getServerSession } from "next-auth/next";
-import type { Session } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-/**
- * Typed wrapper around getServerSession.
- * next-auth v4 doesn't properly infer the augmented Session type
- * when calling getServerSession(authOptions) directly.
- */
-export function getSession(): Promise<Session | null> {
-  return getServerSession(authOptions) as Promise<Session | null>;
+export type AppSession = {
+  user: {
+    id: string;
+    role: string;
+    id_sucursal: number | null;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  };
+};
+
+// next-auth v4 types don't resolve with moduleResolution:bundler — use require to bypass
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const { getServerSession } = require("next-auth/next") as {
+  getServerSession: (...args: unknown[]) => Promise<AppSession | null>;
+};
+
+export function getSession(): Promise<AppSession | null> {
+  return getServerSession(authOptions);
 }

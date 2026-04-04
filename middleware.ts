@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore next-auth v4 types don't resolve with moduleResolution:bundler
 import { getToken } from "next-auth/jwt";
 import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
