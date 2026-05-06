@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition, useState } from 'react';
+import { useEffect, useTransition, useState } from 'react';
 import { setContactStatus } from '@/app/dashboard/operativo/actions';
 import { Copy, Check, ExternalLink, Loader2, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,56 @@ type Row = {
   venta: boolean;
 };
 
+type StatusToggleProps = {
+  checked: boolean;
+  disabled?: boolean;
+  label: string;
+  tone: 'blue' | 'emerald';
+  onChange: (checked: boolean) => void;
+};
+
+function StatusToggle({ checked, disabled, label, tone, onChange }: StatusToggleProps) {
+  return (
+    <label
+      className={cn(
+        "group/toggle relative inline-flex h-6 w-11 shrink-0 items-center",
+        disabled ? "cursor-not-allowed" : "cursor-pointer"
+      )}
+      title={label}
+    >
+      <span className="sr-only">{label}</span>
+      <input
+        type="checkbox"
+        className="peer sr-only"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute inset-0 rounded-full border transition-all duration-200",
+          "peer-focus-visible:ring-2 peer-focus-visible:ring-blue-400/40 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-slate-950",
+          disabled && "opacity-50",
+          checked
+            ? tone === 'blue'
+              ? "border-blue-500/70 bg-blue-600"
+              : "border-emerald-500/70 bg-emerald-600"
+            : "border-slate-700 bg-slate-800 group-hover/toggle:bg-slate-700"
+        )}
+      />
+      <span
+        aria-hidden="true"
+        className={cn(
+          "relative ml-0.5 size-5 rounded-full bg-white shadow-sm transition-transform duration-200",
+          checked && "translate-x-5",
+          disabled && "opacity-80"
+        )}
+      />
+    </label>
+  );
+}
+
 export function CrmTable({ rows }: { rows: Row[] }) {
   const [pending, startTransition] = useTransition();
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -24,11 +74,41 @@ export function CrmTable({ rows }: { rows: Row[] }) {
   // Estado optimista para los toggles
   const [optimisticStates, setOptimisticStates] = useState<Map<string, Partial<Pick<Row, 'llamada_por_tel' | 'venta'>>>>(new Map());
 
+  useEffect(() => {
+    setOptimisticStates(prev => {
+      if (prev.size === 0) return prev;
+
+      const next = new Map(prev);
+
+      for (const row of rows) {
+        if (!row.phone_number) continue;
+
+        const optimisticState = next.get(row.phone_number);
+        if (!optimisticState) continue;
+
+        const serverMatchesOptimistic = (
+          (optimisticState.llamada_por_tel === undefined || optimisticState.llamada_por_tel === row.llamada_por_tel) &&
+          (optimisticState.venta === undefined || optimisticState.venta === row.venta)
+        );
+
+        if (serverMatchesOptimistic) {
+          next.delete(row.phone_number);
+        }
+      }
+
+      return next.size === prev.size ? prev : next;
+    });
+  }, [rows]);
+
   const onToggle = (row: Row, patch: Partial<Pick<Row, 'llamada_por_tel' | 'venta'>>) => {
     if (!row.phone_number) return;
 
     // Actualización optimista inmediata
-    setOptimisticStates(prev => new Map(prev).set(row.phone_number!, patch));
+    setOptimisticStates(prev => {
+      const next = new Map(prev);
+      next.set(row.phone_number!, { ...next.get(row.phone_number!), ...patch });
+      return next;
+    });
     setLoadingId(row.phone_number);
 
     startTransition(async () => {
@@ -51,14 +131,6 @@ export function CrmTable({ rows }: { rows: Row[] }) {
         console.error('Error updating contact:', error);
       } finally {
         setLoadingId(null);
-        // Limpiamos el estado optimista después de que el servidor responda
-        setTimeout(() => {
-          setOptimisticStates(prev => {
-            const newMap = new Map(prev);
-            newMap.delete(row.phone_number!);
-            return newMap;
-          });
-        }, 300);
       }
     });
   };
@@ -165,41 +237,28 @@ export function CrmTable({ rows }: { rows: Row[] }) {
               )}
 
               {/* Toggles */}
-              <div className="mt-3 flex items-center gap-5">
-                <label className="flex items-center gap-2 cursor-pointer">
+              <div className="mt-3 flex flex-wrap items-center gap-5">
+                <div className="flex items-center gap-2">
                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Llamada</span>
-                  <div className="relative inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={!!displayRow.llamada_por_tel}
-                      disabled={isUpdating}
-                      onChange={(e) => onToggle(r, { llamada_por_tel: e.target.checked })}
-                    />
-                    <div className={cn(
-                      "w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:after:bg-white transition-all duration-300",
-                      isUpdating && "opacity-50"
-                    )} />
-                  </div>
-                </label>
+                  <StatusToggle
+                    checked={!!displayRow.llamada_por_tel}
+                    disabled={isUpdating}
+                    label="Marcar llamada"
+                    tone="blue"
+                    onChange={(checked) => onToggle(r, { llamada_por_tel: checked })}
+                  />
+                </div>
 
-                <label className="flex items-center gap-2 cursor-pointer">
+                <div className="flex items-center gap-2">
                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Venta</span>
-                  <div className="relative inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={!!displayRow.venta}
-                      disabled={isUpdating}
-                      onChange={(e) => onToggle(r, { venta: e.target.checked })}
-                    />
-                    <div className={cn(
-                      "w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white transition-all duration-300",
-                      displayRow.venta && "shadow-[0_0_10px_rgba(16,185,129,0.5)]",
-                      isUpdating && "opacity-50"
-                    )} />
-                  </div>
-                </label>
+                  <StatusToggle
+                    checked={!!displayRow.venta}
+                    disabled={isUpdating}
+                    label="Marcar venta"
+                    tone="emerald"
+                    onChange={(checked) => onToggle(r, { venta: checked })}
+                  />
+                </div>
               </div>
             </div>
           );
@@ -284,36 +343,23 @@ export function CrmTable({ rows }: { rows: Row[] }) {
                   </td>
 
                   <td className="px-6 py-4 text-center">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={!!displayRow.llamada_por_tel}
-                        disabled={isUpdating}
-                        onChange={(e) => onToggle(r, { llamada_por_tel: e.target.checked })}
-                      />
-                      <div className={cn(
-                        "w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 peer-checked:after:bg-white transition-all duration-300",
-                        isUpdating && "opacity-50"
-                      )} />
-                    </label>
+                    <StatusToggle
+                      checked={!!displayRow.llamada_por_tel}
+                      disabled={isUpdating}
+                      label="Marcar llamada"
+                      tone="blue"
+                      onChange={(checked) => onToggle(r, { llamada_por_tel: checked })}
+                    />
                   </td>
 
                   <td className="px-6 py-4 text-center">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={!!displayRow.venta}
-                        disabled={isUpdating}
-                        onChange={(e) => onToggle(r, { venta: e.target.checked })}
-                      />
-                      <div className={cn(
-                        "w-9 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:inset-s-0.5 after:bg-slate-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 peer-checked:after:bg-white transition-all duration-300",
-                        displayRow.venta && "shadow-[0_0_12px_rgba(16,185,129,0.5)]",
-                        isUpdating && "opacity-50"
-                      )} />
-                    </label>
+                    <StatusToggle
+                      checked={!!displayRow.venta}
+                      disabled={isUpdating}
+                      label="Marcar venta"
+                      tone="emerald"
+                      onChange={(checked) => onToggle(r, { venta: checked })}
+                    />
                   </td>
 
                   <td className="px-4 py-4 text-right">
