@@ -87,7 +87,7 @@ export default async function ProductosPage({
 
     return (
         <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8 text-slate-200">
-            <header className="flex flex-col gap-3 border-b border-slate-800 pb-5 pt-10 sm:pt-0 sm:flex-row sm:items-center sm:justify-between">
+            <header className="flex flex-col gap-4 border-b border-slate-800 pb-5 pt-10 sm:pt-0 xl:flex-row xl:items-center xl:justify-between">
                 <div>
                     <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase italic">
                         Productos <span className="text-blue-500 text-lg sm:text-xl not-italic">Catálogo</span>
@@ -97,7 +97,7 @@ export default async function ProductosPage({
                     </p>
                 </div>
 
-                <div className="rounded-xl bg-slate-900/50 p-2 ring-1 ring-slate-800 overflow-x-auto">
+                <div className="shrink-0 rounded-xl bg-slate-900/50 p-2 ring-1 ring-slate-800">
                     <DateRangeBar defaultFrom={defaultFrom} defaultTo={defaultTo} />
                 </div>
             </header>
