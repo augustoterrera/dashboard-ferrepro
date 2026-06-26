@@ -22,7 +22,10 @@ export async function GET(req: NextRequest) {
       throw new Error("Error al obtener datos");
     }
 
-    const data = await response.json();
+    const text = await response.text();
+    if (!text.trim()) return NextResponse.json([]);
+
+    const data = JSON.parse(text);
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(

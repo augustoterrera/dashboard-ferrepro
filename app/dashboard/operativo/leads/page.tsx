@@ -1,7 +1,7 @@
 // app/dashboard/operativo/leads/page.tsx
-import { createClient } from '@/lib/supabase/server';
-import { PaginatedCrmTable } from '@/components/operativo/PaginatedCrmTable';
-import { Phone } from 'lucide-react';
+import { createClient } from "@/lib/supabase/server";
+import { PaginatedCrmTable } from "@/components/operativo/PaginatedCrmTable";
+import { Phone } from "lucide-react";
 
 interface ConversationItem {
   json: Conversation;
@@ -16,24 +16,35 @@ interface Conversation {
 }
 
 function parseLabels(input?: string | null): string {
-  const labels = String(input ?? '')
-    .split(',')
+  const labels = String(input ?? "")
+    .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
 
-  return (labels.length ? labels : ['sin_etiqueta']).join(' · ');
+  return (labels.length ? labels : ["sin_etiqueta"]).join(" · ");
 }
 
 async function getConversations(): Promise<Conversation[]> {
-  const response = await fetch(`https://ggwebhookgg.waichatt.com/webhook/chatwoot-db`, {
-    cache: 'no-store',
-  });
+  const response = await fetch(
+    `https://ggwebhookgg.waichatt.com/webhook/chatwoot-db`,
+    {
+      cache: "no-store",
+    },
+  );
 
   if (!response.ok) {
-    throw new Error('Error al obtener datos');
+    throw new Error("Error al obtener datos");
   }
 
-  const data = await response.json();
+  const text = await response.text();
+  if (!text.trim()) return [];
+
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("El webhook de WhatsApp devolvió JSON inválido");
+  }
 
   if (Array.isArray(data)) {
     return (data as ConversationItem[])
@@ -53,7 +64,7 @@ export default async function LeadsPage() {
   // 2) Me quedo con teléfonos válidos
   const phones = conversations
     .map((c) => c.phone_number)
-    .filter((p) => typeof p === 'string' && p.trim().length > 0)
+    .filter((p) => typeof p === "string" && p.trim().length > 0)
     .map((p) => p.trim());
 
   // Si no hay teléfonos, devolvemos tabla vacía
@@ -61,8 +72,12 @@ export default async function LeadsPage() {
     return (
       <div className="space-y-6">
         <header className="space-y-1">
-          <h1 className="text-2xl font-black tracking-tight text-white">Leads WhatsApp</h1>
-          <p className="text-sm text-slate-400">Personas que se contactaron y todavía no compraron.</p>
+          <h1 className="text-2xl font-black tracking-tight text-white">
+            Leads WhatsApp
+          </h1>
+          <p className="text-sm text-slate-400">
+            Personas que se contactaron y todavía no compraron.
+          </p>
         </header>
 
         <PaginatedCrmTable rows={[]} />
@@ -72,9 +87,11 @@ export default async function LeadsPage() {
 
   // 3) Busco estados guardados (venta/llamada) para esos teléfonos
   const { data: estados, error } = await supabase
-    .from('crm_contacts')
-    .select('phone_number, llamada_por_tel, venta, contact_name, conversation_id, conversation_display_id')
-    .in('phone_number', phones);
+    .from("crm_contacts")
+    .select(
+      "phone_number, llamada_por_tel, venta, contact_name, conversation_id, conversation_display_id",
+    )
+    .in("phone_number", phones);
 
   if (error) throw new Error(error.message);
 
