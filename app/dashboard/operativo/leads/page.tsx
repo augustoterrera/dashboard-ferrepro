@@ -1,41 +1,31 @@
 // app/dashboard/operativo/leads/page.tsx
-import { createClient } from "@/lib/supabase/server";
+import { fetchCrmContacts } from "@/lib/data/crm";
+import { CrmSearchBar } from "@/components/operativo/CrmSearchBar";
 import { PaginatedCrmTable } from "@/components/operativo/PaginatedCrmTable";
 import { Phone } from "lucide-react";
 
-type CrmContact = {
-  phone_number: string | null;
-  contact_name: string | null;
-  llamada_por_tel: boolean | null;
-  venta: boolean | null;
-  conversation_id: number | null;
-  conversation_display_id: number | null;
-  conversation_labels: string | null;
-};
+export default async function LeadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string; pageSize?: string }>;
+}) {
+  const sp = await searchParams;
+  const { rows: data, total, page, pageSize } = await fetchCrmContacts({
+    scope: "leads",
+    q: sp.q,
+    page: sp.page,
+    pageSize: sp.pageSize,
+  });
 
-export default async function LeadsPage() {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("crm_contacts")
-    .select("phone_number, contact_name, llamada_por_tel, venta, conversation_id, conversation_display_id, conversation_labels, updated_at")
-    .or("venta.is.false,venta.is.null")
-    .order("updated_at", { ascending: false })
-    .limit(500);
-
-  if (error) throw new Error(error.message);
-
-  const rows = ((data ?? []) as CrmContact[])
-    .filter((c) => c.phone_number && c.phone_number.trim().length > 0)
-    .map((c, idx) => ({
-      conversation_id: c.conversation_id ?? idx + 1,
-      conversation_display_id: c.conversation_display_id ?? c.conversation_id ?? null,
-      contact_name: c.contact_name ?? null,
-      phone_number: c.phone_number,
-      conversation_labels: c.conversation_labels ?? "sin_etiqueta",
-      llamada_por_tel: c.llamada_por_tel ?? false,
-      venta: c.venta ?? false,
-    }));
+  const rows = data.map((c, idx) => ({
+    conversation_id: c.conversation_id ?? idx + 1,
+    conversation_display_id: c.conversation_display_id ?? c.conversation_id ?? null,
+    contact_name: c.contact_name ?? null,
+    phone_number: c.phone_number,
+    conversation_labels: c.conversation_labels ?? "sin_etiqueta",
+    llamada_por_tel: c.llamada_por_tel ?? false,
+    venta: c.venta ?? false,
+  }));
 
   return (
     <div className="space-y-8 animate-in fade-in duration-1000">
@@ -55,7 +45,8 @@ export default async function LeadsPage() {
         </div>
       </header>
 
-      <PaginatedCrmTable rows={rows} />
+      <CrmSearchBar />
+      <PaginatedCrmTable rows={rows} total={total} page={page} pageSize={pageSize} />
     </div>
   );
 }

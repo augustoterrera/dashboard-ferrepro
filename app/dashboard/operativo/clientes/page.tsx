@@ -1,21 +1,23 @@
-import { createClient } from '@/lib/supabase/server';
+import { fetchCrmContacts } from '@/lib/data/crm';
+import { CrmSearchBar } from '@/components/operativo/CrmSearchBar';
 import { PaginatedCrmTable } from '@/components/operativo/PaginatedCrmTable';
 import { ExportClientsButton } from '@/components/operativo/ExportClientsButton';
 import { ShieldCheck } from 'lucide-react';
 
-export default async function ClientesPage() {
-  const supabase = await createClient();
+export default async function ClientesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string; pageSize?: string }>;
+}) {
+  const sp = await searchParams;
+  const { rows: data, total, page, pageSize } = await fetchCrmContacts({
+    scope: 'clientes',
+    q: sp.q,
+    page: sp.page,
+    pageSize: sp.pageSize,
+  });
 
-  const { data, error } = await supabase
-    .from('crm_contacts')
-    .select('phone_number, contact_name, llamada_por_tel, venta, conversation_id, conversation_display_id, updated_at')
-    .eq('venta', true)
-    .order('updated_at', { ascending: false })
-    .limit(500);
-
-  if (error) throw new Error(error.message);
-
-  const rows = (data ?? []).map((c, idx) => ({
+  const rows = data.map((c, idx) => ({
     conversation_id: c.conversation_id ?? idx + 1, // Usar conversation_id de DB o fallback
     conversation_display_id: c.conversation_display_id ?? c.conversation_id ?? null,
     contact_name: c.contact_name ?? null,
@@ -54,7 +56,8 @@ export default async function ClientesPage() {
         </p>
       </header>
 
-      <PaginatedCrmTable rows={rows} />
+      <CrmSearchBar placeholder="Buscar cliente por nombre, teléfono o ID..." />
+      <PaginatedCrmTable rows={rows} total={total} page={page} pageSize={pageSize} />
     </div>
   );
 }
