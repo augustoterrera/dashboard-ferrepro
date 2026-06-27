@@ -3,118 +3,39 @@ import { createClient } from "@/lib/supabase/server";
 import { PaginatedCrmTable } from "@/components/operativo/PaginatedCrmTable";
 import { Phone } from "lucide-react";
 
-interface ConversationItem {
-  json: Conversation;
-}
-
-interface Conversation {
-  conversation_id: number;
-  conversation_display_id: number;
-  conversation_labels: string;
-  contact_name: string;
-  phone_number: string;
-}
-
-function parseLabels(input?: string | null): string {
-  const labels = String(input ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  return (labels.length ? labels : ["sin_etiqueta"]).join(" · ");
-}
-
-async function getConversations(): Promise<Conversation[]> {
-  const response = await fetch(
-    `https://ggwebhookgg.waichatt.com/webhook/chatwoot-db`,
-    {
-      cache: "no-store",
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error("Error al obtener datos");
-  }
-
-  const text = await response.text();
-  if (!text.trim()) return [];
-
-  let data: unknown;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error("El webhook de WhatsApp devolvió JSON inválido");
-  }
-
-  if (Array.isArray(data)) {
-    return (data as ConversationItem[])
-      .map((item) => item?.json)
-      .filter(Boolean);
-  }
-
-  return [];
-}
+type CrmContact = {
+  phone_number: string | null;
+  contact_name: string | null;
+  llamada_por_tel: boolean | null;
+  venta: boolean | null;
+  conversation_id: number | null;
+  conversation_display_id: number | null;
+  conversation_labels: string | null;
+};
 
 export default async function LeadsPage() {
   const supabase = await createClient();
 
-  // 1) Traigo conversaciones desde webhook
-  const conversations = await getConversations();
-
-  // 2) Me quedo con teléfonos válidos
-  const phones = conversations
-    .map((c) => c.phone_number)
-    .filter((p) => typeof p === "string" && p.trim().length > 0)
-    .map((p) => p.trim());
-
-  // Si no hay teléfonos, devolvemos tabla vacía
-  if (phones.length === 0) {
-    return (
-      <div className="space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-2xl font-black tracking-tight text-white">
-            Leads WhatsApp
-          </h1>
-          <p className="text-sm text-slate-400">
-            Personas que se contactaron y todavía no compraron.
-          </p>
-        </header>
-
-        <PaginatedCrmTable rows={[]} />
-      </div>
-    );
-  }
-
-  // 3) Busco estados guardados (venta/llamada) para esos teléfonos
-  const { data: estados, error } = await supabase
+  const { data, error } = await supabase
     .from("crm_contacts")
-    .select(
-      "phone_number, llamada_por_tel, venta, contact_name, conversation_id, conversation_display_id",
-    )
-    .in("phone_number", phones);
+    .select("phone_number, contact_name, llamada_por_tel, venta, conversation_id, conversation_display_id, conversation_labels, updated_at")
+    .or("venta.is.false,venta.is.null")
+    .order("updated_at", { ascending: false })
+    .limit(500);
 
   if (error) throw new Error(error.message);
 
-  const map = new Map(estados?.map((e) => [e.phone_number, e]) ?? []);
-
-  // 4) Leads = conversaciones - los que ya tienen venta=true
-  const rows = conversations
+  const rows = ((data ?? []) as CrmContact[])
     .filter((c) => c.phone_number && c.phone_number.trim().length > 0)
-    .filter((c) => !map.get(c.phone_number.trim())?.venta)
-    .map((c) => {
-      const phone = c.phone_number.trim();
-      const st = map.get(phone);
-
-      return {
-        conversation_id: c.conversation_id,
-        conversation_display_id: c.conversation_display_id ?? null,
-        contact_name: st?.contact_name ?? c.contact_name ?? null,
-        phone_number: phone,
-        conversation_labels: parseLabels(c.conversation_labels),
-        llamada_por_tel: st?.llamada_por_tel ?? false,
-        venta: st?.venta ?? false,
-      };
-    });
+    .map((c, idx) => ({
+      conversation_id: c.conversation_id ?? idx + 1,
+      conversation_display_id: c.conversation_display_id ?? c.conversation_id ?? null,
+      contact_name: c.contact_name ?? null,
+      phone_number: c.phone_number,
+      conversation_labels: c.conversation_labels ?? "sin_etiqueta",
+      llamada_por_tel: c.llamada_por_tel ?? false,
+      venta: c.venta ?? false,
+    }));
 
   return (
     <div className="space-y-8 animate-in fade-in duration-1000">

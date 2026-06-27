@@ -17,7 +17,7 @@ export default async function ClientesPage() {
 
   const rows = (data ?? []).map((c, idx) => ({
     conversation_id: c.conversation_id ?? idx + 1, // Usar conversation_id de DB o fallback
-    conversation_display_id: c.conversation_display_id ?? null,
+    conversation_display_id: c.conversation_display_id ?? c.conversation_id ?? null,
     contact_name: c.contact_name ?? null,
     phone_number: c.phone_number ?? null,
     conversation_labels: 'cliente',
