@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { createClient } from "@/lib/supabase/server";
+import { isPending } from "@/lib/users";
 import bcrypt from "bcryptjs";
 
 export const authOptions = {
@@ -22,7 +23,8 @@ export const authOptions = {
           .eq("email", credentials.email)
           .single();
 
-        if (error || !user || !user.password_hash) return null;
+        // Un invitado que todavía no eligió contraseña no puede loguear
+        if (error || !user || isPending(user.password_hash)) return null;
 
         const valid = await bcrypt.compare(credentials.password, user.password_hash);
         if (!valid) return null;

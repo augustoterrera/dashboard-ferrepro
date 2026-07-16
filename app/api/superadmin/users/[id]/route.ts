@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "@/lib/get-token";
 import { createClient } from "@/lib/supabase/server";
+import { toPublicUser, type UserRecord } from "@/lib/users";
 import bcrypt from "bcryptjs";
 
 function isSuperAdmin(token: Awaited<ReturnType<typeof getToken>>) {
@@ -42,11 +43,11 @@ export async function PATCH(
     .from("users")
     .update(updates)
     .eq("id", id)
-    .select("id, email, name, role, id_sucursal")
+    .select("id, email, name, role, id_sucursal, password_hash")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json(data);
+  return NextResponse.json(toPublicUser(data as UserRecord));
 }
 
 // DELETE /api/superadmin/users/[id] — eliminar usuario

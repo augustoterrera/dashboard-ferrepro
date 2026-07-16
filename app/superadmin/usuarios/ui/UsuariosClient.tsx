@@ -1,10 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, ShieldCheck, Shield, User, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, ShieldCheck, Shield, User, Users, MailCheck, Send } from "lucide-react";
 
 type Sucursal = { id: number; nombre: string };
-type UserRow = { id: string; email: string; name: string | null; role: string; id_sucursal: number | null };
+type UserRow = {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+  id_sucursal: number | null;
+  /** Invitado que todavía no eligió su contraseña */
+  pending: boolean;
+};
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   superadmin: { label: "Super Admin", color: "bg-rose-900/40 text-rose-400 border border-rose-900/50", icon: ShieldCheck },
@@ -31,6 +39,18 @@ function RoleBadge({ role }: { role: string }) {
 type ModalMode = "create" | "edit" | null;
 const EMPTY_FORM = { email: "", password: "", name: "", role: "branch", id_sucursal: "" };
 
+function PendingBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full border border-amber-900/50 bg-amber-900/30 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-400"
+      title="Le enviamos un mail para que cree su contraseña. No puede ingresar hasta que lo haga."
+    >
+      <MailCheck size={10} />
+      Invitación pendiente
+    </span>
+  );
+}
+
 export function UsuariosClient({
   initialUsers,
   sucursales,
@@ -47,6 +67,8 @@ export function UsuariosClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   function openCreate() {
     setEditing(null); setForm(EMPTY_FORM); setError(null); setMode("create");
@@ -60,14 +82,15 @@ export function UsuariosClient({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true); setError(null);
+    setLoading(true); setError(null); setNotice(null);
     try {
       const body: Record<string, unknown> = {
         name: form.name || null,
         role: form.role,
         id_sucursal: form.id_sucursal ? Number(form.id_sucursal) : null,
       };
-      if (mode === "create") { body.email = form.email; body.password = form.password; }
+      // En el alta no se define contraseña: la elige la persona desde el mail
+      if (mode === "create") { body.email = form.email; }
       else if (form.password) { body.password = form.password; }
 
       const url = mode === "create" ? "/api/superadmin/users" : `/api/superadmin/users/${editing!.id}`;
@@ -79,12 +102,33 @@ export function UsuariosClient({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error desconocido");
 
-      if (mode === "create") { setUsers(prev => [data, ...prev]); }
-      else { setUsers(prev => prev.map(u => u.id === data.id ? data : u)); }
+      if (mode === "create") {
+        const { emailSent, ...user } = data;
+        setUsers(prev => [user, ...prev]);
+        setNotice(
+          emailSent
+            ? `Invitación enviada a ${user.email}.`
+            : `Usuario creado, pero no se pudo enviar el mail a ${user.email}. Reenviá la invitación desde la tarjeta.`,
+        );
+      } else {
+        setUsers(prev => prev.map(u => u.id === data.id ? data : u));
+      }
       closeModal();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally { setLoading(false); }
+  }
+
+  async function handleResend(u: UserRow) {
+    setResendingId(u.id); setError(null); setNotice(null);
+    try {
+      const res = await fetch(`/api/superadmin/users/${u.id}/invite`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "No se pudo reenviar la invitación");
+      setNotice(`Invitación reenviada a ${u.email}.`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error desconocido");
+    } finally { setResendingId(null); }
   }
 
   async function handleDelete(u: UserRow) {
@@ -118,6 +162,15 @@ export function UsuariosClient({
 
       {error && !mode && (
         <div className="mb-4 rounded-xl border border-rose-900/40 bg-rose-900/20 px-4 py-3 text-sm text-rose-400">{error}</div>
+      )}
+
+      {notice && (
+        <div className="mb-4 flex items-start justify-between gap-3 rounded-xl border border-blue-900/40 bg-blue-900/20 px-4 py-3 text-sm text-blue-300">
+          <span>{notice}</span>
+          <button onClick={() => setNotice(null)} className="shrink-0 text-blue-500 hover:text-blue-300 transition-colors">
+            <X size={14} />
+          </button>
+        </div>
       )}
 
       {/* Cards grid */}
@@ -160,8 +213,9 @@ export function UsuariosClient({
 
                 {/* Role + sucursal */}
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col items-start gap-1.5">
                     <RoleBadge role={u.role} />
+                    {u.pending && <PendingBadge />}
                     {suc && (
                       <span className="text-[10px] text-slate-600 font-medium">{suc}</span>
                     )}
@@ -169,6 +223,18 @@ export function UsuariosClient({
 
                   {/* Actions */}
                   <div className="flex items-center gap-1 shrink-0">
+                    {u.pending && (
+                      <button
+                        onClick={() => handleResend(u)}
+                        disabled={resendingId === u.id}
+                        className="rounded-lg p-2 text-slate-600 hover:bg-slate-700 hover:text-amber-400 disabled:opacity-50 transition-colors"
+                        title="Reenviar invitación"
+                      >
+                        {resendingId === u.id
+                          ? <Loader2 size={14} className="animate-spin" />
+                          : <Send size={14} />}
+                      </button>
+                    )}
                     <button
                       onClick={() => openEdit(u)}
                       className="rounded-lg p-2 text-slate-600 hover:bg-slate-700 hover:text-blue-400 transition-colors"
@@ -226,11 +292,13 @@ export function UsuariosClient({
                     onChange={e => setForm({ ...form, name: e.target.value })}
                     className="input-dark" placeholder="Nombre completo" />
                 </Field>
-                <Field label={mode === "create" ? "Contraseña *" : "Nueva contraseña (opcional)"}>
-                  <input type="password" required={mode === "create"} value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
-                    className="input-dark" placeholder="Mínimo 8 caracteres" minLength={8} />
-                </Field>
+                {mode === "edit" && (
+                  <Field label="Nueva contraseña (opcional)">
+                    <input type="password" value={form.password}
+                      onChange={e => setForm({ ...form, password: e.target.value })}
+                      className="input-dark" placeholder="Mínimo 8 caracteres" minLength={8} />
+                  </Field>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Rol *">
                     <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="input-dark">
@@ -247,6 +315,14 @@ export function UsuariosClient({
                   </Field>
                 </div>
 
+                {mode === "create" && (
+                  <p className="flex items-start gap-2 rounded-xl border border-slate-700/50 bg-slate-800/40 px-3 py-2.5 text-xs text-slate-400">
+                    <MailCheck size={14} className="mt-0.5 shrink-0 text-blue-400" />
+                    Le va a llegar un mail para crear su contraseña. No va a poder
+                    ingresar hasta que lo haga.
+                  </p>
+                )}
+
                 {error && (
                   <p className="rounded-xl border border-rose-900/40 bg-rose-900/20 px-3 py-2 text-xs text-rose-400">{error}</p>
                 )}
@@ -260,7 +336,7 @@ export function UsuariosClient({
                     className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-sm font-bold text-white hover:bg-blue-500 disabled:opacity-50 active:scale-95 transition-all"
                   >
                     {loading && <Loader2 size={14} className="animate-spin" />}
-                    {mode === "create" ? "Crear" : "Guardar"}
+                    {mode === "create" ? "Crear e invitar" : "Guardar"}
                   </button>
                 </div>
               </form>

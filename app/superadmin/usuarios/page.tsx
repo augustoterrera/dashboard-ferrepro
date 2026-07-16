@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { getSession } from "@/lib/get-session";
 import { createClient } from "@/lib/supabase/server";
+import { toPublicUser, type UserRecord } from "@/lib/users";
 import { UsuariosClient } from "./ui/UsuariosClient";
 import { Users } from "lucide-react";
 
@@ -10,7 +11,7 @@ async function getData() {
   const [usersRes, sucursalesRes] = await Promise.all([
     supabase
       .from("users")
-      .select("id, email, name, role, id_sucursal")
+      .select("id, email, name, role, id_sucursal, password_hash")
       .order("role", { ascending: true }),
     supabase
       .from("sucursales")
@@ -19,7 +20,8 @@ async function getData() {
       .order("id", { ascending: true }),
   ]);
   return {
-    users: usersRes.data ?? [],
+    // toPublicUser colapsa password_hash en `pending` — el hash no cruza al cliente
+    users: ((usersRes.data ?? []) as UserRecord[]).map(toPublicUser),
     sucursales: sucursalesRes.data ?? [],
   };
 }

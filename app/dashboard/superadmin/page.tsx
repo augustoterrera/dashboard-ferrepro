@@ -90,7 +90,7 @@ export default async function SuperAdminPage() {
           value={stats.totalUsers}
           sub={`Admin: ${stats.roleBreakdown.admin ?? 0} · Branch: ${stats.roleBreakdown.branch ?? 0}`}
           color="bg-blue-600"
-          href="/dashboard/superadmin/usuarios"
+          href="/superadmin/usuarios"
         />
         <StatCard
           icon={Building2}
@@ -147,7 +147,7 @@ export default async function SuperAdminPage() {
       {/* Quick links */}
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Link
-          href="/dashboard/superadmin/usuarios"
+          href="/superadmin/usuarios"
           className="flex items-center gap-4 rounded-xl border border-slate-700/50 bg-slate-800/30 p-4 transition-all hover:bg-slate-800/60 hover:border-slate-600 group"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all">

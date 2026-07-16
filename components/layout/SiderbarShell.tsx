@@ -87,7 +87,7 @@ const GROUPS: NavGroup[] = [
     icon: ShieldCheck,
     children: [
       { label: 'Overview', href: '/dashboard/superadmin' },
-      { label: 'Usuarios', href: '/dashboard/superadmin/usuarios' },
+      { label: 'Usuarios', href: '/superadmin/usuarios' },
       { label: 'Sucursales', href: '/dashboard/superadmin/sucursales' },
     ],
   },

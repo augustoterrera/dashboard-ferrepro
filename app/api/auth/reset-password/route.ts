@@ -1,35 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
+import { verifyToken } from "@/lib/auth-tokens";
 
-function verifyToken(token: string): string | null {
-  try {
-    const secret = process.env.NEXTAUTH_SECRET;
-    if (!secret) throw new Error("NEXTAUTH_SECRET no definido");
-
-    const decoded = Buffer.from(token, "base64url").toString("utf-8");
-    const lastColon = decoded.lastIndexOf(":");
-    const payload = decoded.slice(0, lastColon);
-    const hmac = decoded.slice(lastColon + 1);
-
-    const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-
-    // Comparación en tiempo constante para prevenir timing attacks
-    if (!crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(expected))) return null;
-
-    const colonIdx = payload.indexOf(":");
-    const email = payload.slice(0, colonIdx);
-    const expiry = Number(payload.slice(colonIdx + 1));
-
-    if (Date.now() > expiry) return null;
-
-    return email;
-  } catch {
-    return null;
-  }
-}
-
+// Sirve tanto al reset de contraseña como al alta por invitación: en ambos
+// casos el token prueba que quien lo trae controla ese email.
 export async function POST(req: Request) {
   try {
     const { token, password } = await req.json();
@@ -48,8 +23,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const email = verifyToken(token);
-    if (!email) {
+    const payload = verifyToken(token);
+    if (!payload) {
       return NextResponse.json(
         { error: "Token inválido o expirado" },
         { status: 400 },
@@ -62,10 +37,23 @@ export async function POST(req: Request) {
     );
 
     const passwordHash = await bcrypt.hash(password, 12);
-    await supabase
+    const { data, error } = await supabase
       .from("users")
       .update({ password_hash: passwordHash })
-      .eq("email", email);
+      .eq("email", payload.email)
+      .select("id");
+
+    if (error) {
+      return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    }
+
+    // El usuario pudo ser eliminado entre la emisión del token y su uso
+    if (!data?.length) {
+      return NextResponse.json(
+        { error: "Token inválido o expirado" },
+        { status: 400 },
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch {

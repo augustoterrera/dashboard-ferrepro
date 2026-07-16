@@ -20,10 +20,31 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
+const COPY = {
+  reset: {
+    heading: "Nueva",
+    highlight: "Contraseña",
+    subtitle: "Ingresá tu nueva contraseña para recuperar el acceso",
+    passwordLabel: "Nueva contraseña",
+    submit: "Guardar contraseña",
+    submitting: "Guardando...",
+  },
+  invite: {
+    heading: "Creá tu",
+    highlight: "Contraseña",
+    subtitle: "Elegí una contraseña para activar tu cuenta",
+    passwordLabel: "Contraseña",
+    submit: "Activar mi cuenta",
+    submitting: "Activando...",
+  },
+} as const;
+
 export function UpdatePasswordForm({
   className,
+  variant = "reset",
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"div"> & { variant?: keyof typeof COPY }) {
+  const copy = COPY[variant];
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -74,10 +95,10 @@ export function UpdatePasswordForm({
       <div className="rounded-xl border border-slate-700/50 bg-slate-800/40 p-8 shadow-sm">
         <div className="mb-6">
           <h1 className="text-2xl font-black uppercase italic tracking-tight text-white">
-            Nueva <span className="text-purple-500 not-italic">Contraseña</span>
+            {copy.heading} <span className="text-purple-500 not-italic">{copy.highlight}</span>
           </h1>
           <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500">
-            Ingresá tu nueva contraseña para recuperar el acceso
+            {copy.subtitle}
           </p>
         </div>
 
@@ -87,7 +108,7 @@ export function UpdatePasswordForm({
             {/* Nueva contraseña */}
             <div className="grid gap-2">
               <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                Nueva contraseña
+                {copy.passwordLabel}
               </Label>
               <div className="relative">
                 <Input
@@ -176,7 +197,7 @@ export function UpdatePasswordForm({
               className="w-full bg-purple-600 font-bold uppercase tracking-widest text-white hover:bg-purple-700 disabled:opacity-50"
               disabled={isLoading}
             >
-              {isLoading ? "Guardando..." : "Guardar contraseña"}
+              {isLoading ? copy.submitting : copy.submit}
             </Button>
           </div>
         </form>
